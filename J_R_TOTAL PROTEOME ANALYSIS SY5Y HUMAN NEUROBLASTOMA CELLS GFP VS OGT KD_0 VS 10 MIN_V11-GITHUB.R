@@ -1,7 +1,16 @@
 # Clear environment
 rm(list = ls())
 
-# Attach librarues
+#install packages
+install.packages("readxl")
+install.packages("tidyverse")
+install.packages("limma")
+install.packages("EnvStats")   # used to get geometric means
+install.packages("missForest") # Imputation
+install.packages("biomaRt") # library for mapping between annotations
+install.packages("qvalue")
+
+# Attach libraries
 library(readxl)
 library(tidyverse)
 library(limma)
@@ -1288,4 +1297,5 @@ ggplot(topPathways1, aes(reorder(pathway, NES), NES)) +
   theme(text = element_text(face = "bold"))
 
 #Change legend
+
 
