@@ -3,12 +3,24 @@ rm(list = ls())
 
 #install packages
 install.packages("readxl")
-install.packages("tidyverse")
-install.packages("limma")
-install.packages("EnvStats")   # used to get geometric means
-install.packages("missForest") # Imputation
-install.packages("biomaRt") # library for mapping between annotations
-install.packages("qvalue")
+  install.packages("tidyverse")
+  install.packages("EnvStats")   # used to get geometric means
+  install.packages("missForest") # Imputation
+  
+  if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+  
+  BiocManager::install("limma")
+  
+  if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+  
+  BiocManager::install("biomaRt")
+
+  if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+  
+  BiocManager::install("qvalue")
 
 # Attach libraries
 library(readxl)
@@ -1297,5 +1309,6 @@ ggplot(topPathways1, aes(reorder(pathway, NES), NES)) +
   theme(text = element_text(face = "bold"))
 
 #Change legend
+
 
 
