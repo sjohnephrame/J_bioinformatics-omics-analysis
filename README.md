@@ -35,7 +35,7 @@ These workflows reflect real research pipelines used in translational and discov
 | Script | Description |
 |------|------------|
 | `J_R_OGT KO MICE BRAIN TOTAL PROTEOME ANALYSIS.R` | Differential proteomics analysis in OGT knockout mouse brain tissue |
-| `J_R_TOTAL PROTEOME ANALYSIS SY5Y HUMAN.R` | Human SY5Y cell line proteomics analysis |
+| `J_R_TOTAL PROTEOME ANALYSIS SY5Y HUMAN.R` | Differential total proteomics analysis in OGT knockdown Human neuroblastoma SY5Y cell lines, following serum re-activation for kinase activation  |
 | `J_STAT GENOMICS FINAL RNASEQ.R` | RNA-seq differential expression workflow |
 | `functions2_FROM_DR_THOMPSON_GITHUB.R` | Utility functions supporting analysis pipelines |
 
