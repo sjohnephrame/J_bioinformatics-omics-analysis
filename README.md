@@ -41,19 +41,6 @@ These workflows reflect real research pipelines used in translational and discov
 
 ---
 
-## Repository Structure
-
-scripts/
-proteomics/
-rnaseq/
-functions/
-README.md
-
-bash
-Copy code
-
-This organization helps recruiters **quickly see your workflows and functions**.
-
 ## Example Workflow
 
 Typical analysis steps include:
