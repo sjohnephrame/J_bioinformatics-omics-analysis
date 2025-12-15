@@ -1,3 +1,5 @@
+#functions2_file_from_DR. THOMPSON-GITHUB.R
+
 # library(gageData)
 library(org.Mm.eg.db)     # contains symbols
 library(annotate)
@@ -685,3 +687,4 @@ getReactome <- function(species = 'human') {
 	
 	return(reactome_sets)
 }
+
