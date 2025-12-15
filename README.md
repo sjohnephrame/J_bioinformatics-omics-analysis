@@ -71,17 +71,17 @@ All scripts are structured for reproducibility and can be applied to new dataset
 
 ## Reproducibility
 
-- Scripts are designed to be run in **RStudio**  
-- Dependencies can be installed using:
+- All scripts are designed to be run in **RStudio**.
+- Required R packages can be installed using:
 
 ```r
 install.packages("tidyverse")
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
 BiocManager::install(c("DESeq2", "limma", "edgeR"))
-
----
+Scripts include clear step-by-step comments to guide users through each workflow.
 
 ## Author
-
-Sophiya J Hanigan  
-Bioinformatics Scientist | Omics Data Analysis  
+Sophiya J Hanigan
+Bioinformatics Scientist | Omics Data Analysis
 GitHub: https://github.com/sjohnephrame
