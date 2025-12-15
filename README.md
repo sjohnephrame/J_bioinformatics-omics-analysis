@@ -39,6 +39,14 @@ These workflows reflect real research pipelines used in translational and discov
 | `J_STAT GENOMICS FINAL RNASEQ.R` | RNA-seq differential expression workflow |
 | `functions2_FROM_DR_THOMPSON_GITHUB.R` | Utility functions supporting analysis pipelines |
 
+## Repository Structure
+
+scripts/
+  proteomics/
+  rnaseq/
+functions/
+README.md
+
 ---
 
 ## Example Workflow
@@ -69,3 +77,11 @@ All scripts are structured for reproducibility and can be applied to new dataset
 ```r
 install.packages("tidyverse")
 BiocManager::install(c("DESeq2", "limma", "edgeR"))
+
+---
+
+## Author
+
+Sophiya J Hanigan  
+Bioinformatics Scientist | Omics Data Analysis  
+GitHub: https://github.com/sjohnephrame
