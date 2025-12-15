@@ -79,9 +79,13 @@ install.packages("tidyverse")
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install(c("DESeq2", "limma", "edgeR"))
+```
 Scripts include clear step-by-step comments to guide users through each workflow.
 
+---
+
 ## Author
-Sophiya J Hanigan
-Bioinformatics Scientist | Omics Data Analysis
-GitHub: https://github.com/sjohnephrame
+
+**Sophiya J Hanigan**  
+Bioinformatics Scientist | Omics Data Analysis  
+GitHub: [https://github.com/sjohnephrame](https://github.com/sjohnephrame)
