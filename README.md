@@ -53,6 +53,14 @@ Typical analysis steps include:
 
 ---
 
+## Notes for Recruiters
+
+This repository showcases **end-to-end bioinformatics workflows** for proteomics and RNA-seq data.  
+It demonstrates skills highly relevant to biotech and pharmaceutical roles, including data preprocessing, normalization, statistical analysis, visualization, and biological interpretation.  
+All scripts are structured for reproducibility and can be applied to new datasets, showing the ability to deliver reliable and interpretable results in real-world research or industry projects.
+
+---
+
 ## Reproducibility
 
 - Scripts are designed to be run in **RStudio**  
