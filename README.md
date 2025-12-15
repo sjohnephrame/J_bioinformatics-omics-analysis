@@ -1,7 +1,7 @@
 # Bioinformatics Omics Analysis (R)
 
 A portfolio of bioinformatics analyses demonstrating applied **proteomics and RNA-seq workflows** using R and Bioconductor.  
-This repository is intended to showcase skills relevant to **industry bioinformatics and data scientist roles**.
+This repository is intended to showcase skills relevant to **industry and academic bioinformatics and data scientist roles**.
 
 ---
 
@@ -62,8 +62,13 @@ Typical analysis steps include:
 ## Notes for Recruiters
 
 This repository showcases **end-to-end bioinformatics workflows** for proteomics and RNA-seq data.  
-It demonstrates skills highly relevant to biotech and pharmaceutical roles, including data preprocessing, normalization, statistical analysis, visualization, and biological interpretation.  
-All scripts are structured for reproducibility and can be applied to new datasets, showing the ability to deliver reliable and interpretable results in real-world research or industry projects.
+All scripts were developed as part of my **Ph.D. research**, demonstrating skills relevant to **both industry and academic bioinformatics roles**, including:
+
+- Data preprocessing and normalization  
+- Statistical analysis  
+- Visualization and data interpretation  
+
+Scripts are structured for **reproducibility** and can be applied to new datasets, highlighting the ability to deliver **reliable and interpretable results** in real-world research or industry projects.
 
 ---
 
@@ -84,6 +89,7 @@ Scripts include clear step-by-step comments to guide users through each workflow
 
 ## Author
 
-**Sophiya J Hanigan**  
+**Sophiya J Hanigan, PhD**  
 Bioinformatics Scientist | Omics Data Analysis  
+Work in this repository was completed during Ph.D. research  
 GitHub: [https://github.com/sjohnephrame](https://github.com/sjohnephrame)
