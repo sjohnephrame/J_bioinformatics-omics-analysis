@@ -84,5 +84,5 @@ Scripts include clear step-by-step comments to guide users through each workflow
 
 **Sophiya J Hanigan, PhD**  
 Bioinformatics Scientist | Omics Data Analysis  
-Work in this repository was completed during Ph.D. research  
+Work in this repository was completed during my Ph.D. research  
 GitHub: [https://github.com/sjohnephrame](https://github.com/sjohnephrame)
