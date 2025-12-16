@@ -6,7 +6,7 @@ A portfolio of bioinformatics analyses demonstrating applied **proteomics and RN
 
 ## Project Overview
 
-This repository contains reproducible R scripts for analyzing multi-omics datasets, including:
+This repository contains reproducible R scripts for analyzing proteomics and transcriptomics datasets, including:
 - Differential expression analysis
 - Statistical modeling
 - Data normalization and QC
