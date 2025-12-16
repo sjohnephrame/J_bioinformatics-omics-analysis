@@ -1,6 +1,6 @@
 # Bioinformatics Omics Analysis (R)
 
-A portfolio of bioinformatics analyses demonstrating applied **proteomics and RNA-seq workflows** using R and Bioconductor. Work in this repository was completed during Ph.D. research. This repository is intended to showcase skills relevant to **industry and academic bioinformatics and data scientist roles**.
+A portfolio of bioinformatics analyses demonstrating applied **proteomics and RNA-seq workflows** using R and Bioconductor. Work in this repository was completed during my Ph.D. research. This repository is intended to showcase skills relevant to **industry and academic bioinformatics and data scientist roles**.
 
 ---
 
