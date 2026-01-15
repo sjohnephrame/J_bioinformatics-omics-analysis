@@ -1,6 +1,6 @@
-# Bioinformatics Omics Analysis (R)
+# Bioinformatics Omics Analysis (R) - O-GlcNAc mediated regulation of transcriptome and proteome
 
-A portfolio of bioinformatics analyses demonstrating applied **proteomics and RNA-seq workflows** using R and Bioconductor. Work in this repository was completed during my Ph.D. research. This repository is intended to showcase skills relevant to **industry and academic bioinformatics and data scientist roles**.
+A portfolio of bioinformatics analyses demonstrating applied **proteomics and RNA-seq workflows** using R and Bioconductor. This repository is intended to showcase skills relevant to **industry and academic bioinformatics and data scientist roles**.
 
 ---
 
@@ -55,7 +55,7 @@ Typical analysis steps include:
 ## Notes for Recruiters
 
 This repository showcases **end-to-end bioinformatics workflows** for proteomics and RNA-seq data.  
-All scripts were developed as part of my **Ph.D. research**, demonstrating skills relevant to **both industry and academic bioinformatics roles**, including:
+The scripts demonstrate skills relevant to **both industry and academic bioinformatics roles**, including:
 
 - Data preprocessing and normalization  
 - Statistical analysis  
@@ -83,6 +83,5 @@ Scripts include clear step-by-step comments to guide users through each workflow
 ## Author
 
 **Sophiya J Hanigan, PhD**  
-Bioinformatics Scientist | Omics Data Analysis  
-Work in this repository was completed during my Ph.D. research  
+Bioinformatics Consultant | Omics Data Analysis  
 GitHub: [https://github.com/sjohnephrame](https://github.com/sjohnephrame)
