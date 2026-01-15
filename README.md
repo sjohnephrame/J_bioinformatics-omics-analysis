@@ -83,5 +83,5 @@ Scripts include clear step-by-step comments to guide users through each workflow
 ## Author
 
 **Sophiya J Hanigan, PhD**  
-Bioinformatics Consultant | Omics Data Analysis  
+Bioinformatics Scientist | Omics Data Analysis  
 GitHub: [https://github.com/sjohnephrame](https://github.com/sjohnephrame)
