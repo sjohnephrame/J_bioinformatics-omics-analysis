@@ -19,7 +19,7 @@ These workflows reflect real research pipelines used in translational and discov
 ## Tools & Technologies
 
 - **Languages:** R
-- **Libraries:** tidyverse, DESeq2, limma, edgeR, ggplot2
+- **Libraries:** tidyverse, limma, edgeR, ggplot2
 - **Data Types:** RNA-seq, total proteomics
 - **Skills Demonstrated:**
   - Experimental design awareness
