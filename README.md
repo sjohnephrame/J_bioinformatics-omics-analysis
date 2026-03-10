@@ -13,7 +13,8 @@ This repository contains reproducible R scripts for analyzing proteomics and tra
 - Data normalization and QC
 - Biological interpretation and visualization
 
-and phosphoproteomics workflow 
+and phosphoproteomics workflow, including:
+
 - Data processing and **unique phosphosite ID (SiteID) generation**
 - Data normalization
 - Quality control (QC) and exploratory analysis
