@@ -61,15 +61,6 @@ Typical analysis steps include:
 
 ---
 
-## Notes 
-
-This repository showcases **end-to-end bioinformatics workflows** for proteomics, RNA-seq and phosphoproteomics data.  
-The scripts demonstrate skills relevant to **both industry and academic bioinformatics roles**, including:
-
-- Data preprocessing and normalization  
-- Statistical analysis  
-- Visualization and data interpretation  
-
 Scripts are structured for **reproducibility** and can be applied to new datasets, highlighting the ability to deliver **reliable and interpretable results** in real-world research or industry projects.
 
 ---
