@@ -374,6 +374,10 @@ dim(pdata14)
 ## Export to Excel
 #write_xlsx(pdata14, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdata14.xlsx")
 
+#======================================================================================
+# Data Filtering and Quality Control Plots
+#======================================================================================
+
 #-------------------------------------------------------------------------------------------
 #Remove duplicates
 #-------------------------------------------------------------------------------------------
@@ -403,9 +407,9 @@ dim(pdata16) #[1] 16155    28 - No missing values and w/o duplicates SiteID
 #write_xlsx(pdata15, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdata15_No missing values but have duplicate SiteID.xlsx")
 #write_xlsx(pdata16, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdata16_No missing values and withouo duplicates SiteID.xlsx")
 
-#===============================
-# Bar Plot to see missing values
-#===============================
+#=======================================================
+# Quality Control Plot - Bar Plot to see missing values
+#=======================================================
 
 library(ggplot2)
 library(scales)
@@ -499,6 +503,10 @@ dim(pdata22) #[1] 16155    18 #removed missing values and duplicates; is a dataf
 pdata22_mat = as.matrix(log2(pdata22)) # without NAs; matrix and log transformed
 head(pdata22_mat) # without NAs; matrix and log transformed
 dim(pdata22_mat) #[1] 16155    18 # without NAs; matrix and log transformed
+
+#======================================================================================
+# Quality Control Plot - density plot -  is applied to log10 transformed data in code 
+#======================================================================================
 
 #density plot - plot is applied to log10 transformed data in code 
 
