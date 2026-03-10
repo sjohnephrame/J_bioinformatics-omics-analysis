@@ -531,6 +531,10 @@ for (i in 1:ncol(pdata22)){
 head(pdata22_mat) # without NAs; is matrix and log2 transformed
 dim(pdata22_mat) #[1] 16155    18 # without NAs; matrix and log2 transformed
 
+#=========================================================
+# boxplot: Before normalization
+#=========================================================
+
 # boxplot: intensities of all 16 channels after data preprocessing Before normalization
 #http://127.0.0.1:40129/graphics/17b44cfd-ded5-4327-9e49-56e1f2f75d97.pngzation
 
