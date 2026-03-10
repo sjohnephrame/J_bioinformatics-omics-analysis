@@ -61,7 +61,7 @@ Typical analysis steps include:
 
 ---
 
-## Note:
+## Note
 
 Scripts are structured for **reproducibility** and can be applied to new datasets, highlighting the ability to deliver **reliable and interpretable results** in real-world research or industry projects.
 
