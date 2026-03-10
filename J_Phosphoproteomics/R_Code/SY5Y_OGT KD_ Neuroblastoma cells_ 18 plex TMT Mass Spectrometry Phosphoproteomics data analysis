@@ -347,7 +347,7 @@ pdata12.3 <- pdata12 %>%
 #write_xlsx(pdata12.3, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdata12.3.xlsx")
 
 #-------------------------------------------------------------------------------------------
-#Filter_NA
+#Filter_NA (missing values)
 #-------------------------------------------------------------------------------------------
 
 pdata13<-pdata12.3 #[1] 32559    28
@@ -373,7 +373,10 @@ dim(pdata14)
 ## Export to Excel
 #write_xlsx(pdata14, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdata14.xlsx")
 
+#-------------------------------------------------------------------------------------------
 #Remove duplicates
+#-------------------------------------------------------------------------------------------
+
 colnames(pdata14)
 nrow(pdata14)
 dim(pdata14) #[1] 24914    28 - No missing values but have duplicate SiteID
