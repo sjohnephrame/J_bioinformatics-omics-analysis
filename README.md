@@ -26,7 +26,7 @@ These workflows reflect real research pipelines used in bio-medical research set
 ## Tools & Technologies
 
 - **Languages:** R
-- **Libraries:** tidyverse, limma, edgeR, ggplot2
+- **Libraries:** tidyverse, limma, edgeR, ggplot2, PhosR
 - **Data Types:** RNA-seq, total proteomics, phosphoproteomics
 - **Skills Demonstrated:**
     - Experimental design awareness
