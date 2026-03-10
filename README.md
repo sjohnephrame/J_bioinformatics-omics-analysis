@@ -1,4 +1,4 @@
-# Bioinformatics Omics Analysis (R) - O-GlcNAc mediated regulation of transcriptome and proteome
+# Bioinformatics Omics Analysis (R) - O-GlcNAc mediated regulation of transcriptome, proteome and phosphoproteome
 
 A portfolio of bioinformatics analyses demonstrating applied **proteomics, RNA-seq and phosphoproteomics workflows** using R and Bioconductor. This repository is intended to showcase skills relevant to **industry and academic bioinformatics and data scientist roles**.
 
@@ -7,12 +7,18 @@ A portfolio of bioinformatics analyses demonstrating applied **proteomics, RNA-s
 ## Project Overview
 
 This repository contains reproducible R scripts for analyzing proteomics and transcriptomics datasets, including:
+
 - Differential expression analysis
 - Statistical modeling
 - Data normalization and QC
 - Biological interpretation and visualization
 
-These workflows reflect real research pipelines used in translational and discovery biology settings.
+and phosphoproteomics workflow 
+- Data processing and **unique phosphosite ID (SiteID) generation**
+- Data normalization
+- Quality control (QC) and exploratory analysis
+
+These workflows reflect real research pipelines used in bio-medical research settings.
 
 ---
 
@@ -20,12 +26,13 @@ These workflows reflect real research pipelines used in translational and discov
 
 - **Languages:** R
 - **Libraries:** tidyverse, limma, edgeR, ggplot2
-- **Data Types:** RNA-seq, total proteomics
+- **Data Types:** RNA-seq, total proteomics, phosphoproteomics
 - **Skills Demonstrated:**
-  - Experimental design awareness
-  - Statistical testing & multiple-hypothesis correction
-  - Data visualization for biological insight
-  - Modular and reusable R code
+    - Experimental design awareness
+    - Statistical testing & multiple hypothesis correction
+    - Data normalization and QC
+    - Data visualization for biological insight
+    - Modular and reusable R code
 
 ---
 
@@ -49,7 +56,7 @@ Typical analysis steps include:
 3. Differential expression analysis  
 4. Statistical validation  
 5. Visualization (volcano plots, PCA, heatmaps)  
-6. Biological interpretation  
+6. Biological interpretation
 
 ---
 
