@@ -33,7 +33,7 @@ These workflows reflect real research pipelines used in translational and discov
 
 | Script | Description |
 |------|------------|
-| `J_Phosphoproteomics/J_phosphoproteomics_pipeline_human_sy5y_cells_ctrl_vs_ogt_kd.R` | Phosphoproteomics analysis (data processing, Uniques Site ID generation, log2 transformation, normalization) in O-GlcNAc transferase gene (OGT) knockdown Human neuroblastoma SY5Y cell lines, following serum re-activation for kinase activation  |
+| `J_Phosphoproteomics/J_phosphoproteomics_pipeline_human_sy5y_cells_ctrl_vs_ogt_kd.R` | Phosphoproteomics analysis (data processing, Uniques Site ID generation, log2 transformation, normalization, qualit control plots including PCA) in O-GlcNAc transferase gene (OGT) knockdown Human neuroblastoma SY5Y cell lines, following serum re-activation for kinase activation  |
 | `J_Proteomics/J_complete_proteomics_pipeline_human_sy5y_cells_ctrl_vs_ogt_kd.R` | Differential total proteomics analysis in O-GlcNAc transferase gene (OGT) knockdown Human neuroblastoma SY5Y cell lines, following serum re-activation for kinase activation  |
 | `J_Proteomics/J_complete_proteomics_pipeline_mouse_brain_ctrl_vs_ogt_ko.R` | Differential proteomics analysis in OGT knockout mouse brain tissue |
 | `J_rnaseq/J_complete_rnaseq_pipeline_mouse_liver_saline_vs_tmg.R` | RNA-seq differential expression workflow for OGT knockout mouse liver tissue |
