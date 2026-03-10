@@ -1,4 +1,4 @@
-# Bioinformatics Omics Analysis (R) - O-GlcNAc mediated regulation of transcriptome, proteome and phosphoproteome
+# Bioinformatics omics analysis (R) - O-GlcNAc mediated regulation of transcriptome, proteome and phosphoproteome
 
 A portfolio of bioinformatics analyses demonstrating applied **proteomics, RNA-seq and phosphoproteomics workflows** using R and Bioconductor. This repository is intended to showcase skills relevant to **industry and academic bioinformatics and data scientist roles**.
 
