@@ -1120,6 +1120,517 @@ head(go.results2)
 sum(go.results2$P.DE<10^(-5)) #2
 sum(go.results2$P.DE<0.05) #299
 
+###GO analysis
+###====================================###
+
+#goana: Gene Ontology or KEGG Pathway Analysis
+#In limma: Linear Models for Microarray Data
+
+#topGO package provides tools for testing GO terms while accounting for the topology of the GO graph. Different test statistics and different methods for eliminating local similarities and dependencies between GO terms can be implemented and applied.
+
+#In R, topKEGG is a function that extracts the most significant KEGG pathways from kegga output. 
+#kegga function to gather pathway enrichment for my dataset.
+
+library(org.Hs.eg.db)
+#library(edgeR)
+
+#if (!require("BiocManager", quietly = TRUE))
+ # install.packages("BiocManager")
+
+#BiocManager::install("GO.db")
+
+library(GO.db)
+
+#OGT KD 605 10 MIN VS GFP 10 MIN
+
+#d.go1 <- dea$tt
+#head(d.go1)
+#d.go.DE <- subset(d.go,FDR<0.05) 
+head(remsortupdownOGTTENGFPTEN)
+d.go1 <- remsortupdownOGTTENGFPTEN
+head(d.go1) #subsetted already for p<0.05
+#d.go.DE <- subset(d.go,PValue<0.05) 
+d.go.DE1<-d.go1
+head(d.go.DE1)
+d.entrez.id1 <- mapIds(org.Hs.eg.db, keys=rownames(d.go.DE1),column="ENTREZID",keytype="SYMBOL")
+length(d.entrez.id1)
+head(d.entrez.id1)
+all(rownames(d.go.DE1)==names(d.entrez.id1)) 
+go.test1 <- goana(d.entrez.id1,species="Hs")
+go.results1 <- topGO(go.test1, sort = "DE", number = Inf)
+head(go.results1, 20)
+sum(go.results1$P.DE<10^(-5)) #487
+sum(go.results1$P.DE<0.05) #2532
+#In the goana output from the limma package, the columns represent the following:
+#Term: The full descriptive name of the Gene Ontology (GO) term (e.g., "cell cycle" or "metabolic process").
+#Ont: The specific GO ontology or "aspect" the term belongs to:
+  #BP: Biological Process (e.g., DNA replication).
+  #CC: Cellular Component (e.g., mitochondrion).
+  #MF: Molecular Function (e.g., enzyme activity).
+#N: The total number of genes in the entire background "universe" 
+    #that are annotated to that specific GO term.
+#DE: The number of genes from your Differentially Expressed (DE) list 
+    #that are annotated to that GO term.
+#P.DE: The p-value for the over-representation of that GO term in your 
+#DE gene set, typically calculated using a hypergeometric test 
+#(equivalent to Fisher's exact test). 
+#www.rdocumentation.org
+#www.rdocumentation.org
+ 
+
+#topBP <- topGO(go.test1, ontology = "BP", number = 20)
+#print(topBP)
+
+library(ggplot2)
+
+# Get top 20 pathways
+df_plot <- topGO(go.test1, sort = "DE", number = 20)
+
+# Add -log10 P-value for the x-axis
+df_plot$logP <- -log10(df_plot$P.DE)
+head(df_plot)
+# Reorder Term by significance so the plot is ranked
+df_plot$Term <- reorder(df_plot$Term, df_plot$logP)
+head(df_plot)
+
+#Dot plot - Top 20 Enriched GO Terms - OGT KD 605 10 min vs GFP - 10 min
+#Without filtering
+ggplot(df_plot, aes(x = logP, y = Term, size = DE, color = logP)) +
+  geom_point() +
+  scale_color_gradient(low = "blue", high = "red") +
+  labs(title = "Top 20 Enriched GO Terms - Before Filtering \n OGT KD 605 10 min vs GFP - 10 min",
+       x = "-log10(P-value)",
+       y = "GO Term",
+       size = "Gene Count",
+       color = "Significance") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"), # This centers the title
+    axis.title = element_text(face = "bold"), # This bolds the Y axis label
+    axis.text.y = element_text(face = "bold")   # Bolds the individual terms
+  ) 
+
+#Terms like "intracellular anatomical structure" and "protein binding" are so broad that they include almost half the genome. While the 
+#-values are astronomically low (10^-202), they aren't telling you much about the specific biology of your experiment.
+
+
+#Focus on Biological Process (BP)
+#Cellular Component (CC) and Molecular Function (MF) often give 
+#generic structural results. Biological Process usually contains
+#the pathways researchers actually care about (e.g., "glucose metabolic process").
+
+# Filter for just Biological Process
+go.bp <- topGO(go.test1, ontology = "BP", sort = "DE", number = 50)
+head(go.bp, 20)
+
+#N: The total number of genes in the entire background "universe" 
+#that are annotated to that specific GO term.
+#DE: The number of genes from your Differentially Expressed (DE) list 
+#that are annotated to that GO term.
+
+#Let's grab terms that have fewer than 1,000 total genes (N < 1000). This removes 
+#the "cellular process" noise and finds the specific pathways.
+
+# Filter for Biological Process and smaller, more specific terms
+go.specific <- go.results1[go.results1$Ont == "BP" & go.results1$N < 1000, ]
+
+# Take the top 20 of THESE results
+plot_data <- head(go.specific, 20)
+head(plot_data)
+# Create -log10 P-value for the plot
+plot_data$logP <- -log10(plot_data$P.DE)
+plot_data$Term <- reorder(plot_data$Term, plot_data$logP)
+head(plot_data)
+print(plot_data)
+
+library(ggplot2)
+
+ggplot(plot_data, aes(x = logP, y = Term)) +
+  geom_point(aes(size = DE, color = logP)) +
+  scale_color_gradient(low = "blue", high = "red") +
+  theme_minimal() +
+  labs(
+    title = "Gene Ontology - Top 20 Specific Biological Processes",
+    subtitle = "OGT KD 605 10 min vs GFP 10 min \n Filtered for N < 1000 genes",
+    x = "-log10(P-value)",
+    y = NULL,
+    size = "Genes in List",
+    color = "Significance"
+  ) +
+  theme(
+    # Bolds the pathway names (Y-axis)
+    axis.text.y = element_text(size = 10, face = "bold", color = "black"), 
+    # Bolds the X-axis numbers (-log10 P-values)
+    axis.text.x = element_text(face = "bold"),
+    # Centers the titles
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, face = "bold")
+  )
+
+
+#if (!require(ggtext)) install.packages("ggtext")
+library(ggtext)
+
+#Update the Plot Code for mixed title
+
+ggplot(plot_data, aes(x = logP, y = Term)) +
+  geom_point(aes(size = DE, color = logP)) +
+  scale_color_gradient(low = "blue", high = "red") +
+  theme_minimal() +
+  labs(
+    title = "Gene Ontology (GO) - Top 20 Specific Biological Processes",
+    # Use HTML tags: <b> for bold, <br> for new line
+    subtitle = "<b>OGT KD 605 10 min vs GFP 10 min</b><br>Filtered for N < 1000 genes",
+    x = "-log10(P-value)",
+    y = NULL,
+    size = "Genes in List",
+    color = "Significance"
+  ) +
+  theme(
+    # This line tells ggplot to interpret the HTML tags in the subtitle
+    plot.subtitle = element_markdown(hjust = 0.5, lineheight = 1.2), 
+    
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.text.y = element_text(size = 10, face = "bold", color = "black"),
+    axis.text.x = element_text(face = "bold")
+  )
+
+#Filetr N<500
+# Filter for Biological Process and smaller, more specific terms
+go.specific2 <- go.results1[go.results1$Ont == "BP" & go.results1$N < 500, ]
+
+# Take the top 20 of THESE results
+plot_data2 <- head(go.specific2, 20)
+
+# Create -log10 P-value for the plot
+plot_data2$logP <- -log10(plot_data2$P.DE)
+plot_data2$Term <- reorder(plot_data2$Term, plot_data2$logP)
+
+print(plot_data2)
+
+library(ggtext)
+
+#Update the Plot Code for mixed title
+
+ggplot(plot_data2, aes(x = logP, y = Term)) +
+  geom_point(aes(size = DE, color = logP)) +
+  scale_color_gradient(low = "blue", high = "red") +
+  theme_minimal() +
+  labs(
+    title = "Gene Ontology (GO) - Top 20 Specific Biological Processes",
+    # Use HTML tags: <b> for bold, <br> for new line
+    subtitle = "<b>OGT KD 605 10 min vs GFP 10 min</b><br>Filtered for N < 500 genes",
+    x = "-log10(P-value)",
+    y = NULL,
+    size = "Genes in List",
+    color = "Significance"
+  ) +
+  theme(
+    # This line tells ggplot to interpret the HTML tags in the subtitle
+    plot.subtitle = element_markdown(hjust = 0.5, lineheight = 1.2), 
+    
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.text.y = element_text(size = 10, face = "bold", color = "black"),
+    axis.text.x = element_text(face = "bold")
+  )
+
+#if (!require(gt)) install.packages("gt")
+
+library(gt)
+library(dplyr)
+install.packages("webshot2")
+library(webshot2)
+# Prepare and style the table
+
+plot_data %>%
+  # Target only the relevant columns
+  dplyr::select(Term, Ont, N, DE, P.DE) %>% 
+  gt() %>%
+  # 1. Bold the Title and Subtitle
+  tab_header(
+    title = md("**Gene Ontology (GO) Top 20 Specific Biological Processes**"),
+    # Use <br> for the line break and move the ** markers
+    subtitle = md("**OGT KD 605 10 min vs GFP 10 min** <br> Filtered for N < 1000 genes")
+  ) %>%
+  # 2. Bold ALL Column Headings
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels()
+  ) %>%
+  # 3. Bold ONLY the 'Term' column body
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(columns = Term)
+  ) %>%
+  # 4. Final Formatting (Scientific notation and alignment)
+  fmt_scientific(columns = P.DE, decimals = 2) %>%
+  opt_row_striping() %>%
+  cols_align(align = "center", columns = c(Ont, N, DE, P.DE))%>%
+  cols_width(P.DE ~ px(150)) %>% # Adjust 150 higher if you want even more space
+  gtsave("C:\\Users\\sophi\\OneDrive\\Desktop\\J_Total proteome SY5Y plots\\J_QUANTILE NORMALIZATION\\GO_TABLE1_OGT KD 605 10 MIN VS GFP 10MIN_N LESS 1000.png") # This saves it to your working directory
+
+plot_data2 %>%
+  # Target only the relevant columns
+  dplyr::select(Term, Ont, N, DE, P.DE) %>% 
+  gt() %>%
+  # 1. Bold the Title and Subtitle
+  tab_header(
+    title = md("**Gene Ontology (GO) Top 20 Specific Biological Processes**"),
+    # Use <br> for the line break and move the ** markers
+    subtitle = md("**OGT KD 605 10 min vs GFP 10 min** <br> Filtered for N < 500 genes")
+  ) %>%
+  # 2. Bold ALL Column Headings
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels()
+  ) %>%
+  # 3. Bold ONLY the 'Term' column body
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(columns = Term)
+  ) %>%
+  # 4. Final Formatting (Scientific notation and alignment)
+  fmt_scientific(columns = P.DE, decimals = 2) %>%
+  opt_row_striping() %>%
+  cols_align(align = "center", columns = c(Ont, N, DE, P.DE))%>%
+  cols_width(P.DE ~ px(150)) %>% # Adjust 150 higher if you want even more space
+  gtsave("C:\\Users\\sophi\\OneDrive\\Desktop\\J_Total proteome SY5Y plots\\J_QUANTILE NORMALIZATION\\GO_TABLE1_OGT KD 605 10 MIN VS GFP 10MIN_N LESS 500.png") # This saves it to your working directory
+
+#OGT KD 606 10 MIN VS GFP 10 MIN
+
+#d.go1 <- dea$tt
+#head(d.go1)
+#d.go.DE <- subset(d.go,FDR<0.05) 
+head(remsortupdownROGTTENGFPTEN)
+d.go2 <- remsortupdownROGTTENGFPTEN
+head(d.go2) #subsetted already for p<0.05
+#d.go.DE <- subset(d.go,PValue<0.05) 
+d.go.DE2<-d.go2
+head(d.go.DE2)
+head(d.go.DE1)
+d.entrez.id2 <- mapIds(org.Hs.eg.db, keys=rownames(d.go.DE2),column="ENTREZID",keytype="SYMBOL")
+length(d.entrez.id2)
+head(d.entrez.id2)
+all(rownames(d.go.DE2)==names(d.entrez.id2)) 
+go.test2 <- goana(d.entrez.id2,species="Hs")
+go.results2 <- topGO(go.test2, sort = "DE", number = Inf)
+head(go.results2, 20)
+sum(go.results2$P.DE<10^(-5)) #761
+sum(go.results2$P.DE<0.05) #3410
+#In the goana output from the limma package, the columns represent the following:
+#Term: The full descriptive name of the Gene Ontology (GO) term (e.g., "cell cycle" or "metabolic process").
+#Ont: The specific GO ontology or "aspect" the term belongs to:
+#BP: Biological Process (e.g., DNA replication).
+#CC: Cellular Component (e.g., mitochondrion).
+#MF: Molecular Function (e.g., enzyme activity).
+#N: The total number of genes in the entire background "universe" 
+#that are annotated to that specific GO term.
+#DE: The number of genes from your Differentially Expressed (DE) list 
+#that are annotated to that GO term.
+#P.DE: The p-value for the over-representation of that GO term in your 
+#DE gene set, typically calculated using a hypergeometric test 
+#(equivalent to Fisher's exact test). 
+#www.rdocumentation.org
+#www.rdocumentation.org
+
+
+#topBP <- topGO(go.test1, ontology = "BP", number = 20)
+#print(topBP)
+
+library(ggplot2)
+
+# Get top 20 pathways
+df_plot2 <- topGO(go.test2, sort = "DE", number = 20)
+
+# Add -log10 P-value for the x-axis
+df_plot2$logP <- -log10(df_plot2$P.DE)
+head(df_plot2)
+# Reorder Term by significance so the plot is ranked
+df_plot2$Term <- reorder(df_plot2$Term, df_plot2$logP)
+head(df_plot2)
+
+#Dot plot - Top 20 Enriched GO Terms - OGT KD 605 10 min vs GFP - 10 min
+#Without filtering
+ggplot(df_plot2, aes(x = logP, y = Term, size = DE, color = logP)) +
+  geom_point() +
+  scale_color_gradient(low = "blue", high = "red") +
+  labs(title = "Top 20 Enriched GO Terms - Before Filtering \n OGT KD 606 10 min vs GFP - 10 min",
+       x = "-log10(P-value)",
+       y = "GO Term",
+       size = "Gene Count",
+       color = "Significance") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"), # This centers the title
+    axis.title = element_text(face = "bold"), # This bolds the Y axis label
+    axis.text.y = element_text(face = "bold")   # Bolds the individual terms
+  ) 
+
+#Terms like "intracellular anatomical structure" and "protein binding" are so broad that they include almost half the genome. While the 
+#-values are astronomically low (10^-202), they aren't telling you much about the specific biology of your experiment.
+
+
+#Focus on Biological Process (BP)
+#Cellular Component (CC) and Molecular Function (MF) often give 
+#generic structural results. Biological Process usually contains
+#the pathways researchers actually care about (e.g., "glucose metabolic process").
+
+# Filter for just Biological Process
+go.bp2 <- topGO(go.test2, ontology = "BP", sort = "DE", number = 50)
+head(go.bp2, 20)
+
+#N: The total number of genes in the entire background "universe" 
+#that are annotated to that specific GO term.
+#DE: The number of genes from your Differentially Expressed (DE) list 
+#that are annotated to that GO term.
+
+#Let's grab terms that have fewer than 1,000 total genes (N < 1000). This removes 
+#the "cellular process" noise and finds the specific pathways.
+
+# Filter for Biological Process and smaller, more specific terms
+go.specific3 <- go.results2[go.results2$Ont == "BP" & go.results2$N < 1000, ]
+
+# Take the top 20 of THESE results
+plot_data3 <- head(go.specific3, 20)
+head(plot_data3)
+# Create -log10 P-value for the plot
+plot_data3$logP <- -log10(plot_data3$P.DE)
+plot_data3$Term <- reorder(plot_data3$Term, plot_data3$logP)
+head(plot_data3)
+print(plot_data3)
+
+library(ggplot2)
+
+#if (!require(ggtext)) install.packages("ggtext")
+library(ggtext)
+
+#Update the Plot Code for mixed title
+
+ggplot(plot_data3, aes(x = logP, y = Term)) +
+  geom_point(aes(size = DE, color = logP)) +
+  scale_color_gradient(low = "blue", high = "red") +
+  theme_minimal() +
+  labs(
+    title = "Gene Ontology (GO) - Top 20 Specific Biological Processes",
+    # Use HTML tags: <b> for bold, <br> for new line
+    subtitle = "<b>OGT KD 606 10 min vs GFP 10 min</b><br>Filtered for N < 1000 genes",
+    x = "-log10(P-value)",
+    y = NULL,
+    size = "Genes in List",
+    color = "Significance"
+  ) +
+  theme(
+    # This line tells ggplot to interpret the HTML tags in the subtitle
+    plot.subtitle = element_markdown(hjust = 0.5, lineheight = 1.2), 
+    
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.text.y = element_text(size = 10, face = "bold", color = "black"),
+    axis.text.x = element_text(face = "bold")
+  )
+
+#Filetr N<500
+# Filter for Biological Process and smaller, more specific terms
+go.specific4 <- go.results2[go.results2$Ont == "BP" & go.results2$N < 500, ]
+
+# Take the top 20 of THESE results
+plot_data4 <- head(go.specific4, 20)
+
+# Create -log10 P-value for the plot
+plot_data4$logP <- -log10(plot_data4$P.DE)
+plot_data4$Term <- reorder(plot_data4$Term, plot_data4$logP)
+
+print(plot_data4)
+
+library(ggtext)
+
+#Update the Plot Code for mixed title
+
+ggplot(plot_data4, aes(x = logP, y = Term)) +
+  geom_point(aes(size = DE, color = logP)) +
+  scale_color_gradient(low = "blue", high = "red") +
+  theme_minimal() +
+  labs(
+    title = "Gene Ontology (GO) - Top 20 Specific Biological Processes",
+    # Use HTML tags: <b> for bold, <br> for new line
+    subtitle = "<b>OGT KD 606 10 min vs GFP 10 min</b><br>Filtered for N < 500 genes",
+    x = "-log10(P-value)",
+    y = NULL,
+    size = "Genes in List",
+    color = "Significance"
+  ) +
+  theme(
+    # This line tells ggplot to interpret the HTML tags in the subtitle
+    plot.subtitle = element_markdown(hjust = 0.5, lineheight = 1.2), 
+    
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.text.y = element_text(size = 10, face = "bold", color = "black"),
+    axis.text.x = element_text(face = "bold")
+  )
+
+#if (!require(gt)) install.packages("gt")
+
+library(gt)
+library(dplyr)
+#install.packages("webshot2")
+library(webshot2)
+
+# Prepare and style the table
+
+plot_data3 %>%
+  # Target only the relevant columns
+  dplyr::select(Term, Ont, N, DE, P.DE) %>% 
+  gt() %>%
+  # 1. Bold the Title and Subtitle
+  tab_header(
+    title = md("**Gene Ontology (GO) Top 20 Specific Biological Processes**"),
+    # Use <br> for the line break and move the ** markers
+    subtitle = md("**OGT KD 606 10 min vs GFP 10 min** <br> Filtered for N < 1000 genes")
+  ) %>%
+  # 2. Bold ALL Column Headings
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels()
+  ) %>%
+  # 3. Bold ONLY the 'Term' column body
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(columns = Term)
+  ) %>%
+  # 4. Final Formatting (Scientific notation and alignment)
+  fmt_scientific(columns = P.DE, decimals = 2) %>%
+  opt_row_striping() %>%
+  cols_align(align = "center", columns = c(Ont, N, DE, P.DE))%>%
+  cols_width(P.DE ~ px(150)) %>% # Adjust 150 higher if you want even more space
+  gtsave("C:\\Users\\sophi\\OneDrive\\Desktop\\J_Total proteome SY5Y plots\\J_QUANTILE NORMALIZATION\\GO_TABLE1_OGT KD 606 10 MIN VS GFP 10MIN_N LESS 1000.png") # This saves it to your working directory
+
+plot_data4 %>%
+  # Target only the relevant columns
+  dplyr::select(Term, Ont, N, DE, P.DE) %>% 
+  gt() %>%
+  # 1. Bold the Title and Subtitle
+  tab_header(
+    title = md("**Gene Ontology (GO) Top 20 Specific Biological Processes**"),
+    # Use <br> for the line break and move the ** markers
+    subtitle = md("**OGT KD 606 10 min vs GFP 10 min** <br> Filtered for N < 500 genes")
+  ) %>%
+  # 2. Bold ALL Column Headings
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels()
+  ) %>%
+  # 3. Bold ONLY the 'Term' column body
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(columns = Term)
+  ) %>%
+  # 4. Final Formatting (Scientific notation and alignment)
+  fmt_scientific(columns = P.DE, decimals = 2) %>%
+  opt_row_striping() %>%
+  cols_align(align = "center", columns = c(Ont, N, DE, P.DE))%>%
+  cols_width(P.DE ~ px(150)) %>% # Adjust 150 higher if you want even more space
+  gtsave("C:\\Users\\sophi\\OneDrive\\Desktop\\J_Total proteome SY5Y plots\\J_QUANTILE NORMALIZATION\\GO_TABLE1_OGT KD 606 10 MIN VS GFP 10MIN_N LESS 500.png") # This saves it to your working directory
+
+            
 ###KEGG analysis
 
 d.kegg1 <- remsortupdownOGTTENGFPTEN
