@@ -1,7 +1,9 @@
-# Clear environment
-rm(list = ls())
+#===================================================================================
+#J_18-Plex TMT-Total Proteomics analysis_SY5Y OGT Knockdown (KD) Neuroblatoma cells
+#===================================================================================
 
 #install packages
+
 install.packages("readxl")
   install.packages("tidyverse")
   install.packages("EnvStats")   # used to get geometric means
