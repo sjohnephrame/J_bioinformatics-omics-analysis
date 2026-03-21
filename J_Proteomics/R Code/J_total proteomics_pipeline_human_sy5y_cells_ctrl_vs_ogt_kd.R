@@ -274,23 +274,6 @@ boxplot(dat_comp_mat_median1, main="Boxplot Median normalized Intensities",col=c
 
 #############################################################################################
 
-################################################################################################################
-#density plot - after normalization - not needed just for reference
-
-head(dat_comp1_norm)# without NAs, not log, normalized
-for (i in 1:ncol(dat_comp1_norm)){
-  if (i==1){
-    plot(density(log10(dat_comp1_norm[,1])),main="Density plot across study samples",xlab="Subjects",col="red",ylim=c(0,0.8))}
-  else {
-    den <- density(log10(dat_comp1_norm[,i]))
-    lines(den$x,den$y,col="blue")}
-}
-
-
-#Normalization makes density plot a single line
-
-#============================================================================================
-
 # Imputation (if warranted) #In data science, imputation is the process of replacing 
 #missing or unavailable values in a dataset with substituted values. 
 
