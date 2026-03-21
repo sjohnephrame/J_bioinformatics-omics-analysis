@@ -458,7 +458,7 @@ cm_data #contrast matrix
 
 # Fitting models. The trend=TRUE argument indicates that the mean-variance trend 
 #will be accounted for in eBayes (limma-trend method)
-de = top_table_results(mapping, dat, X, cm_dat, annotate = TRUE, trend = TRUE)
+#de = top_table_results(mapping, dat, X, cm_dat, annotate = TRUE, trend = TRUE)
 
 #In proteomics, the limma-trend method is often preferred because it accounts for 
 #the fact that low-intensity proteins usually have more "noise" than high-intensity ones.
@@ -550,15 +550,14 @@ tmpa$Accession = dea$tt$Accession[match(tmpa$Symbol, clean_symbols_up)]
 #WE have two tables that are out of order:
 #  tmpa: Sorted alphabetically.
 #dea$tt: Sorted by P-value (Significant genes first).
-#When you run: match(tmpa$Symbol, gene.symbola)
-#R is saying:
-#  "Hey, tmpa$Symbol says the first gene is A2M. 
-#Go look through the original gene.symbola list and tell me which row A2M was originally in.
+#When we run: match(tmpa$Symbol, gene.symbola)
+#tmpa$Symbol say the first gene is A2M. 
+#Thd code will go look through the original gene.symbola list and tells which row A2M was originally in.
 #If A2M was originally in row 500, the match function returns the number 500.
 #Then, tmpa$Accession = dea$tt$Accession[500]
 #"Go to the original table dea$tt$Accession, grab the Accession ID from row 500, 
 #and paste it into the first row of my new table tmpa"
-#match(A,B) takes a list of things you have (Table A) and finds 
+#So match(A,B) takes a list of things you have (Table A) and finds 
 #where they are located in a master list (Table B).
 
 head(tmpa)
@@ -749,7 +748,7 @@ PCA$p
 
 ##########################################################################################
 
-#for erk data, do a box plot
+#Box plot
 # boxplot: intensities of all 16 channels after data preprocessing and normalihttp://127.0.0.1:40129/graphics/17b44cfd-ded5-4327-9e49-56e1f2f75d97.pngzation
 par(mfrow=c(1,1), font.lab=2, cex.lab=1.2, font.axis=2, cex.axis=1.2)
 boxplot(dat_comp_mat_quant, main="Boxplot normalized Intensities")
