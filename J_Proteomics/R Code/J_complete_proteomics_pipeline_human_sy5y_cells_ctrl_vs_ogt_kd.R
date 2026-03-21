@@ -1064,62 +1064,6 @@ col <- ifelse(prot.list >0, "orange", "blue")
 barplot(sort(prot.list, decreasing = T),axisnames=FALSE,main="Plot of ranked Fold changes of total proteome - OGT - 606 10 min vs. GFP - 10 min",  col=col, border=col, ylim=c(-4,4))
 
 ###############################################################################################################################################
-
-###GO analysis
-
-#goana: Gene Ontology or KEGG Pathway Analysis
-#In limma: Linear Models for Microarray Data
-
-#topGO package provides tools for testing GO terms while accounting for the topology of the GO graph. Different test statistics and different methods for eliminating local similarities and dependencies between GO terms can be implemented and applied.
-
-#In R, topKEGG is a function that extracts the most significant KEGG pathways from kegga output. 
-#kegga function to gather pathway enrichment for my dataset.
-
-library(org.Hs.eg.db)
-library(edgeR)
-
-#if (!require("BiocManager", quietly = TRUE))
-#  install.packages("BiocManager")
-
-#BiocManager::install("GO.db")
-
-library(GO.db)
-
-head(remsortupdownOGTTENGFPTEN)
-d.go1 <- remsortupdownOGTTENGFPTEN
-head(d.go1) #subsetted already for p<0.05
-#d.go.DE <- subset(d.go,PValue<0.05) 
-d.go.DE1<-d.go1
-head(d.go.DE1)
-d.entrez.id1 <- mapIds(org.Hs.eg.db, keys=rownames(d.go.DE1),column="ENTREZID",keytype="SYMBOL")
-length(d.entrez.id1)
-head(d.entrez.id1)
-all(rownames(d.go.DE1)==names(d.entrez.id1)) 
-go.test1 <- goana(d.entrez.id1,species="Hs")
-go.results1 <- topGO(go.test1, sort = "DE", number = Inf)
-head(go.results1)
-sum(go.results1$P.DE<10^(-5)) #487
-sum(go.results1$P.DE<0.05) #2532
-
-head(remsortupdownOGTTENGFPTEN)
-head(logFCgreat)
-dim(logFCgreat) #64  2
-d.go2 <- logFCgreat
-head(d.go2) #subsetted already for p<0.05, FDR, log FC >1.5 and <-1.5
-#d.go.DE <- subset(d.go,PValue<0.05) 
-d.go.DE2<-d.go2
-head(d.go.DE2)
-dim(d.go.DE2)
-d.entrez.id2 <- mapIds(org.Hs.eg.db, keys=rownames(d.go.DE2),column="ENTREZID",keytype="SYMBOL")
-length(d.entrez.id2)
-head(d.entrez.id2)
-all(rownames(d.go.DE2)==names(d.entrez.id2)) 
-go.test2 <- goana(d.entrez.id2,species="Hs")
-go.results2 <- topGO(go.test2, sort = "DE", number = Inf)
-head(go.results2)
-sum(go.results2$P.DE<10^(-5)) #2
-sum(go.results2$P.DE<0.05) #299
-
 ###GO analysis
 ###====================================###
 
