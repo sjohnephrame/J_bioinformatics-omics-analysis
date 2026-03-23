@@ -1915,56 +1915,96 @@ library(KEGGREST)
 #sum(kegg.results$P.DE<10^(-5))
 
 ######################################################################################################################
-######################################################################################################################
-
-### J_GSEA analysis for OGT 606 10 MIN VS GFP 10 MIN
+#==================================================================#
+### J_GSEA analysis - Final code - OGT KD 606 10MIN VS GFP 10 MIN
+#==================================================================#
 
 # Load All gene sets file downloaded from Broad Institute 
 # The following website contains the gene set collection or the complete Molecular Signatures Database (MSigDB)  
 # http://software.broadinstitute.org/gsea/downloads.jsp#msigdb
-#  
+  
 library(fgsea)
+library(msigdbr)
 
-all.gene.sets <- gmtPathways("C:\\Users\\sophi\\OneDrive\\Desktop\\J_POSTDOC AND JOBS\\J_APPLIED DATA SCIENCE\\J_STATISTICS\\J_STATISTICAL GENOMICS BIOS 799\\msigdb.v2023.2.Hs.symbols.gmt") #got lot of warnings
-all.gene.sets <- gmtPathways("C:\\Users\\sophi\\OneDrive\\Desktop\\J_POSTDOC AND JOBS\\J_APPLIED DATA SCIENCE\\J_STATISTICS\\J_STATISTICAL GENOMICS BIOS 799\\msigdb.v7.4.symbols.gmt")
-class(all.gene.sets)
-length(all.gene.sets)
-all.gene.sets[1:2]
-# Show first a few pathways, and within those, show only the first few genes. 
+# Pull all MSigDB collections (caution: this will be a huge list)
+all_msigdb_df <- msigdbr(species = "Homo sapiens")
+all_gene_sets2 <- split(x = all_msigdb_df$gene_symbol, f = all_msigdb_df$gs_name)
+
+length(all_gene_sets2) # Should be ~33,000+
+#[1] 35134
+
 library(tidyverse)
-all.gene.sets %>% head() %>% lapply(head)
 
-head(prot.list)
-#head(d.entrez.id1)
-#d.entrez.id2<-
-### Now run fgsea 
-fgseaRes <- fgsea(pathways = all.gene.sets, stats = prot.list, minSize=15, maxSize=500,eps=0)
-warnings()
-head(fgseaRes)
-head(fgseaRes[order(pval), ])
-sum(fgseaRes[, padj < 0.05])#289
-fgseaRes1<-fgseaRes[order(padj), ]
-head(fgseaRes1)
+#The following command will give a quick "peek" at the first 6 pathways 
+#and the first 6 genes within each.
 
+#all.gene.sets %>% head() %>% lapply(head) #2023 list
+all_gene_sets2 %>% head() %>% lapply(head) #updated 2025 list
+
+head(prot.list) ##GSEA 606 PROT LIST
+head(prot.list2)#GSEA 605 PROT LIST
+
+fgseaRes2 <- fgsea(pathways = all_gene_sets2, stats = prot.list, minSize=15, maxSize=500,eps=0)
+head(fgseaRes2) # updated 2025 list
+head(fgseaRes2[order(pval), ])
+sum(fgseaRes2[, padj < 0.05]) #289 # updated 2025 list - so better to use
+
+fgseaRes4<-fgseaRes2[order(padj), ]
+head(fgseaRes4)
 
 # Make a table plot for a bunch of selected pathways:
-topPathwaysUp <- fgseaRes[ES > 0][head(order(padj), n=10), pathway]
-topPathwaysDown <- fgseaRes[ES < 0][head(order(padj), n=10), pathway]
+#if (!requireNamespace("gridExtra", quietly = TRUE)) install.packages("gridExtra")
+library(gridExtra)
+library(grid)
+
+topPathwaysUp <- fgseaRes2[ES > 0 & padj < 0.05][head(order(padj), n=10), pathway]
+#topPathwaysUp <- fgseaRes2[ES > 0][head(order(padj), n=10), pathway]
+topPathwaysDown <- fgseaRes2[ES < 0 & padj < 0.05][head(order(padj), n=10), pathway]
 topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
-p<-plotGseaTable(all.gene.sets[topPathways], prot.list, fgseaRes,gseaParam = 0.5, pathwayLabelStyle=list(size=7),
+
+#with prefixes 
+p<-plotGseaTable(all_gene_sets2[topPathways], prot.list, fgseaRes2,gseaParam = 0.5, pathwayLabelStyle=list(size=7, fontface = "bold"), 
                  valueStyle = list(size=7),
                  axisLabelStyle = list(size=4))
-p
 
-#ggsave(p, width=10, height=8, file="table.png")
+# 2. Add the title
+grid.arrange(p, top = textGrob("GSEA - OGT KD 606 10 min vs GFP 10 min", 
+                               x = 0.62, 
+                               just = "center",
+                               gp = gpar(fontsize = 12, fontface = "bold")))
 
-plotGseaTable(all.gene.sets[topPathwaysUp], prot.list, fgseaRes,gseaParam = 0.5, pathwayLabelStyle=list(size=7),
-              valueStyle = list(size=7),
-              axisLabelStyle = list(size=6))
+# 1. Clean the names (remove prefixes)
+fgseaRes2[, pathway := gsub("^[^_]*_", "", pathway)]
 
-plotGseaTable(all.gene.sets[rev(topPathwaysDown)], prot.list, fgseaRes,gseaParam = 0.5, pathwayLabelStyle=list(size=7),
-              valueStyle = list(size=7),
-              axisLabelStyle = list(size=6))
+# 2. Sort by significance (padj) so the best version of a pathway is on top
+fgseaRes2 <- fgseaRes2[order(padj)]
+
+# 3. Remove duplicates based on the pathway name
+# This keeps ONLY the most significant version of "OXIDATIVE_PHOSPHORYLATION"
+fgseaRes_unique <- fgseaRes2[!duplicated(pathway)]
+
+# 4. Now select your Top 10 from the UNIQUE list
+topPathwaysUp <- fgseaRes_unique[ES > 0 & padj < 0.05][head(order(padj), n=10), pathway]
+topPathwaysDown <- fgseaRes_unique[ES < 0 & padj < 0.05][head(order(padj), n=10), pathway]
+topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
+
+# 5. Make sure the pathway list names match the cleaned names
+names(all_gene_sets2) <- gsub("^[^_]*_", "", names(all_gene_sets2))
+
+# 6. Re-generate the plot
+p <- plotGseaTable(all_gene_sets2[topPathways], 
+                   prot.list, 
+                   fgseaRes_unique, 
+                   gseaParam = 0.5, 
+                   pathwayLabelStyle = list(size=7, fontface = "bold"), 
+                   valueStyle = list(size=7),
+                   axisLabelStyle = list(size=4))
+
+# 7. Draw with the title
+grid.arrange(p, top = textGrob("GSEA - OGT KD 606 10 min vs GFP 10 min", 
+                               x = 0.65, 
+                               just = "center",
+                               gp = gpar(fontsize = 12, fontface = "bold")))
 
 head(topPathways)
 
@@ -1973,32 +2013,125 @@ topPathways
 # Make a few Enrichment Plots
 
 #Top 4 up
-
+head(prot.list)
 #Plot1
-plotEnrichment(all.gene.sets[["GOMF_TRANSPORTER_ACTIVITY"]],prot.list) + labs(title="GOMF_TRANSPORTER_ACTIVITY")
+plotEnrichment(all_gene_sets2[["OXIDATIVE_PHOSPHORYLATION"]],prot.list) + labs(title="OXIDATIVE_PHOSPHORYLATION")
+plotEnrichment(all_gene_sets2[["OXIDATIVE_PHOSPHORYLATION"]], prot.list) + 
+  labs(
+    title = "GSEA_OGT KD 606 10 MIN vs. GFP 10 MIN \n OXIDATIVE_PHOSPHORYLATION",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
+
 #Plot2
-plotEnrichment(all.gene.sets[["GOCC_ORGANELLE_INNER_MEMBRANE"]],prot.list) + labs(title="GOCC_ORGANELLE_INNER_MEMBRANE")
+plotEnrichment(all_gene_sets2[["ELECTRON_TRANSPORT_CHAIN_OXPHOS_SYSTEM_IN_MITOCHONDRIA"]],prot.list) + labs(title="ELECTRON_TRANSPORT_CHAIN_OXPHOS_SYSTEM_IN_MITOCHONDRIA")
+plotEnrichment(all_gene_sets2[["ELECTRON_TRANSPORT_CHAIN_OXPHOS_SYSTEM_IN_MITOCHONDRIA"]], prot.list) + 
+  labs(
+    title = "GSEA_OGT KD 606 10 MIN vs. GFP 10 MIN \n ELECTRON_TRANSPORT_CHAIN_OXPHOS_SYSTEM_IN_MITOCHONDRIA",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
+
 #Plot3
-plotEnrichment(all.gene.sets[["KEGG_OXIDATIVE_PHOSPHORYLATION"]],prot.list) + labs(title="KEGG_OXIDATIVE_PHOSPHORYLATION")
+plotEnrichment(all_gene_sets2[["ORGANELLE_INNER_MEMBRANE"]],prot.list) + labs(title="ORGANELLE_INNER_MEMBRANE")
+plotEnrichment(all_gene_sets2[["ORGANELLE_INNER_MEMBRANE"]], prot.list) + 
+  labs(
+    title = "GSEA_OGT KD 606 10 MIN vs. GFP 10 MIN \n ORGANELLE_INNER_MEMBRANE",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
+
 #Plot4
-plotEnrichment(all.gene.sets[["WP_ELECTRON_TRANSPORT_CHAIN_OXPHOS_SYSTEM_IN_MITOCHONDRIA"]],prot.list) + labs(title="WP_ELECTRON_TRANSPORT_CHAIN_OXPHOS_SYSTEM_IN_MITOCHONDRIA")
+plotEnrichment(all_gene_sets2[["AEROBIC_RESPIRATION_AND_RESPIRATORY_ELECTRON_TRANSPORT"]],prot.list) + labs(title="AEROBIC_RESPIRATION_AND_RESPIRATORY_ELECTRON_TRANSPORT")
+plotEnrichment(all_gene_sets2[["AEROBIC_RESPIRATION_AND_RESPIRATORY_ELECTRON_TRANSPORT"]], prot.list) + 
+  labs(
+    title = "GSEA_OGT KD 606 10 MIN vs. GFP 10 MIN \n AEROBIC_RESPIRATION_AND_RESPIRATORY_ELECTRON_TRANSPORT",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
 
 #Top 4 down
 
 #Plot1
-plotEnrichment(all.gene.sets[["REACTOME_EUKARYOTIC_TRANSLATION_INITIATION"]],prot.list) + labs(title="REACTOME_EUKARYOTIC_TRANSLATION_INITIATION")
+plotEnrichment(all.gene.sets[["EUKARYOTIC_TRANSLATION_INITIATION"]],prot.list) + labs(title="EUKARYOTIC_TRANSLATION_INITIATION")
+plotEnrichment(all_gene_sets2[["EUKARYOTIC_TRANSLATION_INITIATION"]], prot.list) + 
+  labs(
+    title = "GSEA_OGT KD 606 10 MIN vs. GFP 10 MIN \n EUKARYOTIC_TRANSLATION_INITIATION",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
 #gseaplot(all.gene.sets[["REACTOME_EUKARYOTIC_TRANSLATION_INITIATION"]],prot.list) + labs(title="REACTOME_EUKARYOTIC_TRANSLATION_INITIATION")
 
 #Plot2
-plotEnrichment(all.gene.sets[["REACTOME_SELENOAMINO_ACID_METABOLISM"]],prot.list) + labs(title="REACTOME_SELENOAMINO_ACID_METABOLISM")
+plotEnrichment(all.gene.sets[["NONSENSE_MEDIATED_DECAY_NMD"]],prot.list) + labs(title="NONSENSE_MEDIATED_DECAY_NMD")
+plotEnrichment(all_gene_sets2[["NONSENSE_MEDIATED_DECAY_NMD"]], prot.list) + 
+  labs(
+    title = "GSEA_OGT KD 606 10 MIN vs. GFP 10 MIN \n NONSENSE_MEDIATED_DECAY_NMD",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
+
 #Plot3
-plotEnrichment(all.gene.sets[["REACTOME_EUKARYOTIC_TRANSLATION_ELONGATION"]],prot.list) + labs(title="REACTOME_EUKARYOTIC_TRANSLATION_ELONGATION")
+plotEnrichment(all.gene.sets[["EUKARYOTIC_TRANSLATION_ELONGATION"]],prot.list) + labs(title="EUKARYOTIC_TRANSLATION_ELONGATION")
+plotEnrichment(all_gene_sets2[["EUKARYOTIC_TRANSLATION_ELONGATION"]], prot.list) + 
+  labs(
+    title = "GSEA_OGT KD 606 10 MIN vs. GFP 10 MIN \n EUKARYOTIC_TRANSLATION_ELONGATION",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
+
 #Plot4
-plotEnrichment(all.gene.sets[["REACTOME_RESPONSE_OF_EIF2AK4_GCN2_TO_AMINO_ACID_DEFICIENCY"]],prot.list) + labs(title="REACTOME_RESPONSE_OF_EIF2AK4_GCN2_TO_AMINO_ACID_DEFICIENCY")
+plotEnrichment(all.gene.sets[["SELENOAMINO_ACID_METABOLISM"]],prot.list) + labs(title="SELENOAMINO_ACID_METABOLISM")
+plotEnrichment(all_gene_sets2[["SELENOAMINO_ACID_METABOLISM"]], prot.list) + 
+  labs(
+    title = "GSEA_OGT KD 606 10 MIN vs. GFP 10 MIN \n SELENOAMINO_ACID_METABOLISM",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
 
 #----------------------------------------------------------------------------------------------------
 
-#Pretty gsea visualizations    #07/15/2024 
+#Pretty gsea visualizations    #07152024 start here
 
 library(org.Hs.eg.db)
 #install.packages("msigdbr")
@@ -2015,7 +2148,7 @@ type(prot.list)
 
 library(enrichplot)
 
-head(fgseaRes)
+head(fgseaRes2)
 #listpathway<-fgseaRes[,c("pathway","padj","ES")]
 #head(listpathway)
 #topPathwaysUp1 <- fgseaRes[ES > 0][head(order(padj), n=10), pathway]
@@ -2023,8 +2156,7 @@ head(fgseaRes)
 #head(listpathway)
 #listpathway<-as.matrix(listpathway)
 
-topPathwaysUp1 <- fgseaRes[ES > 0][head(order(padj), n=10)]
-head(topPathwaysUp1)
+topPathwaysUp1 <- fgseaRes_unique[ES > 0][head(order(padj), n=10)]
 topPathwaysUp1<-topPathwaysUp1[,-2]
 topPathwaysUp1
 topPathwaysUp1<-topPathwaysUp1[,-3]
@@ -2034,9 +2166,8 @@ topPathwaysUp1
 topPathwaysUp1<-topPathwaysUp1[,-(4:5)]
 topPathwaysUp1
 topPathwaysUp1<-as.data.frame(topPathwaysUp1)
-topPathwaysUp1
 
-topPathwaysDown1 <- fgseaRes[ES < 0][head(order(padj), n=10)]
+topPathwaysDown1 <- fgseaRes_unique[ES < 0][head(order(padj), n=10)]
 topPathwaysDown1<-topPathwaysDown1[,-2]
 topPathwaysDown1
 topPathwaysDown1<-topPathwaysDown1[,-3]
@@ -2046,7 +2177,7 @@ topPathwaysDown1
 topPathwaysDown1<-topPathwaysDown1[,-(4:5)]
 topPathwaysDown1
 topPathwaysDown1<-as.data.frame(topPathwaysDown1)
-topPathwaysDown1
+
 
 topPathways1 <- rbind(topPathwaysUp1, rev(topPathwaysDown1)) #merge rows
 topPathways1
@@ -2054,17 +2185,413 @@ topPathways1<-as.data.frame(topPathways1)
 topPathways1
 
 #https://stephenturner.github.io/deseq-to-fgsea/#using_the_fgsea_package
+#ggplot(topPathways1, aes(reorder(pathway, NES), NES)) +
+#  geom_col(aes(fill=padj<0.05&NES>0)) +
+#  coord_flip() +
+#  labs(x="Pathway", y="Normalized Enrichment Score",
+#       title="GSEA TOP 10 UP AND DOWN REGULATED PATHWAYS \n OGT KD 606 10 MIN. vs GFP 10 MIN.") + 
+#  theme_minimal()+
+#  theme(text = element_text(face = "bold"))
+
+#Pathways with underscore
 ggplot(topPathways1, aes(reorder(pathway, NES), NES)) +
-  geom_col(aes(fill=padj<0.05&NES>0)) +
+  # Removed color="black" to take away the borders around the bars
+  geom_col(aes(fill = NES > 0)) + 
+  scale_fill_manual(
+    values = c("TRUE" = "#FF8C00", "FALSE" = "#4682B4"), 
+    labels = c("TRUE" = "Upregulated", "FALSE" = "Downregulated"),
+    name = "Direction"
+  ) +
   coord_flip() +
-  labs(x="Pathway", y="Normalized Enrichment Score",
-       title="Hallmark pathways NES from GSEA") + 
-  theme_minimal()+
-  theme(text = element_text(face = "bold"))
+  labs(
+    x = "Pathway", 
+    y = "Normalized Enrichment Score (NES)",
+    title = "GSEA: Top 10 Up and Down Regulated Pathways \n OGT KD 606 10 MIN. vs GFP 10 MIN."
+  ) + 
+  theme_bw() + 
+  theme(
+    # lineheight = 1.5 creates the space between the two title lines
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14, lineheight = 1.2),
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(face = "bold", color = "black"),
+    # This keeps the border around the whole plot, but not the bars
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1.2),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(face = "bold")
+  )
 
-#Change legend
+#Pathways without underscore
+ggplot(topPathways1, aes(x = reorder(gsub("_", " ", pathway), NES), y = NES)) +
+  geom_col(aes(fill = NES > 0)) + 
+  scale_fill_manual(
+    values = c("TRUE" = "#FF8C00", "FALSE" = "#4682B4"), 
+    labels = c("TRUE" = "Upregulated", "FALSE" = "Downregulated"),
+    name = "Direction"
+  ) +
+  coord_flip() +
+  labs(
+    x = NULL, # Keep the axis label clean
+    y = "Normalized Enrichment Score (NES)",
+    title = "GSEA: Top 10 Up and Down Regulated Pathways \n OGT KD 606 10 MIN. vs GFP 10 MIN."
+  ) + 
+  theme_bw() + 
+  theme(
+    # Centered bold title with that 1.5 line spacing
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14, lineheight = 1.2),
+    # Bold text for everything else
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(face = "bold", color = "black"),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1.2),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(face = "bold")
+  )
 
 
+#==================================================================#
+### J_GSEA analysis - Final code - OGT KD 605 10MIN VS GFP 10 MIN
+#==================================================================#
 
 
+# Load All gene sets file downloaded from Broad Institute 
+# The following website contains the gene set collection or the complete Molecular Signatures Database (MSigDB)  
+# http://software.broadinstitute.org/gsea/downloads.jsp#msigdb
+
+library(fgsea)
+library(msigdbr)
+
+# Pull all MSigDB collections (caution: this will be a huge list)
+all_msigdb_df <- msigdbr(species = "Homo sapiens")
+all_gene_sets2 <- split(x = all_msigdb_df$gene_symbol, f = all_msigdb_df$gs_name)
+
+length(all_gene_sets2) # Should be ~33,000+
+#[1] 35134
+
+library(tidyverse)
+
+#The following command will give a quick "peek" at the first 6 pathways 
+#and the first 6 genes within each.
+
+#all.gene.sets %>% head() %>% lapply(head) #2023 list
+all_gene_sets2 %>% head() %>% lapply(head) #updated 2025 list
+
+head(prot.list) ##GSEA 606 PROT LIST
+head(prot.list2)#GSEA 605 PROT LIST
+
+fgseaRes3 <- fgsea(pathways = all_gene_sets2, stats = prot.list2, minSize=15, maxSize=500,eps=0)
+head(fgseaRes3) # updated 2025 list
+head(fgseaRes3[order(pval), ])
+sum(fgseaRes3[, padj < 0.05]) #278 # updated 2025 list - so better to use
+head(fgseaRes3)
+fgseaRes5<-fgseaRes3[order(padj), ]
+head(fgseaRes5)
+
+# Make a table plot for a bunch of selected pathways:
+#if (!requireNamespace("gridExtra", quietly = TRUE)) install.packages("gridExtra")
+library(gridExtra)
+library(grid)
+
+topPathwaysUp2 <- fgseaRes3[ES > 0 & padj < 0.05][head(order(padj), n=10), pathway]
+#topPathwaysUp <- fgseaRes2[ES > 0][head(order(padj), n=10), pathway]
+topPathwaysDown2 <- fgseaRes3[ES < 0 & padj < 0.05][head(order(padj), n=10), pathway]
+topPathways2 <- c(topPathwaysUp2, rev(topPathwaysDown2))
+head(topPathways2)
+#with prefixes 
+p2<-plotGseaTable(all_gene_sets2[topPathways2], prot.list2, fgseaRes3,gseaParam = 0.5, pathwayLabelStyle=list(size=7, fontface = "bold"), 
+                 valueStyle = list(size=7),
+                 axisLabelStyle = list(size=4))
+
+# 2. Add the title
+grid.arrange(p2, top = textGrob("GSEA - OGT KD 605 10 min vs GFP 10 min", 
+                               x = 0.62, 
+                               just = "center",
+                               gp = gpar(fontsize = 12, fontface = "bold")))
+
+# 1. Clean the names (remove prefixes)
+fgseaRes3[, pathway := gsub("^[^_]*_", "", pathway)]
+
+# 2. Sort by significance (padj) so the best version of a pathway is on top
+fgseaRes3 <- fgseaRes3[order(padj)]
+
+# 3. Remove duplicates based on the pathway name
+# This keeps ONLY the most significant version of "OXIDATIVE_PHOSPHORYLATION"
+fgseaRes_unique2 <- fgseaRes3[!duplicated(pathway)]
+
+# 4. Now select your Top 10 from the UNIQUE list
+topPathwaysUp2 <- fgseaRes_unique2[ES > 0 & padj < 0.05][head(order(padj), n=10), pathway]
+topPathwaysDown2 <- fgseaRes_unique2[ES < 0 & padj < 0.05][head(order(padj), n=10), pathway]
+topPathways2 <- c(topPathwaysUp2, rev(topPathwaysDown2))
+
+# 5. Make sure the pathway list names match the cleaned names
+names(all_gene_sets2) <- gsub("^[^_]*_", "", names(all_gene_sets2))
+
+# 6. Re-generate the plot
+p2 <- plotGseaTable(all_gene_sets2[topPathways2], 
+                   prot.list2, 
+                   fgseaRes_unique2, 
+                   gseaParam = 0.5, 
+                   pathwayLabelStyle = list(size=7, fontface = "bold"), 
+                   valueStyle = list(size=7),
+                   axisLabelStyle = list(size=4))
+
+# 7. Draw with the title
+grid.arrange(p2, top = textGrob("GSEA - OGT KD 605 10 min vs GFP 10 min", 
+                               x = 0.65, 
+                               just = "center",
+                               gp = gpar(fontsize = 12, fontface = "bold")))
+
+head(topPathways2)
+
+library(ggplot2)
+topPathways2
+# Make a few Enrichment Plots
+
+#Top 6 up
+head(prot.list2)
+#Plot6
+plotEnrichment(all_gene_sets2[["OXIDATIVE_PHOSPHORYLATION"]],prot.list2) + labs(title="OXIDATIVE_PHOSPHORYLATION")
+plotEnrichment(all_gene_sets2[["OXIDATIVE_PHOSPHORYLATION"]], prot.list2) + 
+  labs(
+    title = "GSEA_OGT KD 605 10 MIN vs. GFP 10 MIN \n OXIDATIVE_PHOSPHORYLATION (PATHWAY 6)",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
+
+#Plot5
+plotEnrichment(all_gene_sets2[["ELECTRON_TRANSPORT_CHAIN_OXPHOS_SYSTEM_IN_MITOCHONDRIA"]],prot.list2) + labs(title="ELECTRON_TRANSPORT_CHAIN_OXPHOS_SYSTEM_IN_MITOCHONDRIA")
+plotEnrichment(all_gene_sets2[["ELECTRON_TRANSPORT_CHAIN_OXPHOS_SYSTEM_IN_MITOCHONDRIA"]], prot.list2) + 
+  labs(
+    title = "GSEA_OGT KD 605 10 MIN vs. GFP 10 MIN \n ELECTRON_TRANSPORT_CHAIN_OXPHOS_SYSTEM_IN_MITOCHONDRIA (PATHWAY 5)",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
+
+#Plot1
+plotEnrichment(all_gene_sets2[["RNA_POLYMERASE_II_TRANSCRIPTION_REGULATORY_REGION_SEQUENCE_SPECIFIC_DNA_BINDING"]],prot.list2) + labs(title="RNA_POLYMERASE_II_TRANSCRIPTION_REGULATORY_REGION_SEQUENCE_SPECIFIC_DNA_BINDING")
+plotEnrichment(all_gene_sets2[["RNA_POLYMERASE_II_TRANSCRIPTION_REGULATORY_REGION_SEQUENCE_SPECIFIC_DNA_BINDING"]], prot.list2) + 
+  labs(
+    title = "GSEA_OGT KD 605 10 MIN vs. GFP 10 MIN \n RNA_POLYMERASE_II_TRANSCRIPTION_REGULATORY_REGION_SEQUENCE_SPECIFIC_DNA_BINDING (PATHWAY 1)",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
+
+#Plot2
+plotEnrichment(all_gene_sets2[["DNA_BINDING_TRANSCRIPTION_FACTOR_ACTIVITY"]],prot.list2) + labs(title="DNA_BINDING_TRANSCRIPTION_FACTOR_ACTIVITY")
+plotEnrichment(all_gene_sets2[["DNA_BINDING_TRANSCRIPTION_FACTOR_ACTIVITY"]], prot.list2) + 
+  labs(
+    title = "GSEA_OGT KD 605 10 MIN vs. GFP 10 MIN \n DNA_BINDING_TRANSCRIPTION_FACTOR_ACTIVITY (PATHWAY 2)",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
+
+#Plot3
+plotEnrichment(all_gene_sets2[["CIS_REGULATORY_REGION_SEQUENCE_SPECIFIC_DNA_BINDING"]],prot.list2) + labs(title="CIS_REGULATORY_REGION_SEQUENCE_SPECIFIC_DNA_BINDING")
+plotEnrichment(all_gene_sets2[["CIS_REGULATORY_REGION_SEQUENCE_SPECIFIC_DNA_BINDING"]], prot.list2) + 
+  labs(
+    title = "GSEA_OGT KD 605 10 MIN vs. GFP 10 MIN \n CIS_REGULATORY_REGION_SEQUENCE_SPECIFIC_DNA_BINDING (PATHWAY 3)",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
+
+#Plot4
+plotEnrichment(all_gene_sets2[["PARKINSONS_DISEASE"]],prot.list2) + labs(title="PARKINSONS_DISEASE")
+plotEnrichment(all_gene_sets2[["PARKINSONS_DISEASE"]], prot.list2) + 
+  labs(
+    title = "GSEA_OGT KD 605 10 MIN vs. GFP 10 MIN \n PARKINSONS_DISEASE (PATHWAY 4)",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
+
+#Top 4 down
+
+#Plot20
+plotEnrichment(all_gene_sets2[["MATRISOME"]],prot.list2) + labs(title="MATRISOME")
+plotEnrichment(all_gene_sets2[["MATRISOME"]], prot.list2) + 
+  labs(
+    title = "GSEA_OGT KD 605 10 MIN vs. GFP 10 MIN \n MATRISOME (PATHWAY 20 - TOP DOWN REGULATED)",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
+
+#Plot19
+plotEnrichment(all_gene_sets2[["SELENOAMINO_ACID_METABOLISM"]],prot.list2) + labs(title="SELENOAMINO_ACID_METABOLISM")
+plotEnrichment(all_gene_sets2[["SELENOAMINO_ACID_METABOLISM"]], prot.list2) + 
+  labs(
+    title = "GSEA_OGT KD 605 10 MIN vs. GFP 10 MIN \n SELENOAMINO_ACID_METABOLISM (PATHWAY 19 - TOP DOWN REGULATED)",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
+
+#Plot17
+plotEnrichment(all_gene_sets2[["APOPTOSIS_BY_EPOXOMICIN_UP"]],prot.list2) + labs(title="APOPTOSIS_BY_EPOXOMICIN_UP")
+plotEnrichment(all_gene_sets2[["APOPTOSIS_BY_EPOXOMICIN_UP"]], prot.list2) + 
+  labs(
+    title = "GSEA_OGT KD 605 10 MIN vs. GFP 10 MIN \n APOPTOSIS_BY_EPOXOMICIN_UP (PATHWAY 17 - TOP DOWN REGULATED)",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
+
+#Plot13
+plotEnrichment(all_gene_sets2[["EUKARYOTIC_TRANSLATION_ELONGATION"]],prot.list2) + labs(title="EUKARYOTIC_TRANSLATION_ELONGATION")
+plotEnrichment(all_gene_sets2[["EUKARYOTIC_TRANSLATION_ELONGATION"]], prot.list2) + 
+  labs(
+    title = "GSEA_OGT KD 605 10 MIN vs. GFP 10 MIN \n EUKARYOTIC_TRANSLATION_ELONGATION (PATHWAY 13 - TOP DOWN REGULATED)",
+    x = "Rank", 
+    y = "Enrichment Score"
+  ) +
+  theme(
+    # hjust=0.5 centers, face="bold" bolds, lineheight adds the space
+    plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1.5),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)
+  )
+
+#----------------------------------------------------------------------------------------------------
+
+#Pretty gsea visualizations   
+
+library(org.Hs.eg.db)
+#install.packages("msigdbr")
+library(msigdbr)
+library(clusterProfiler)
+head(prot.list2)
+
+head(prot.list2)
+type(prot.list2)
+
+
+#GSEA 605 PROT LIST
+
+
+library(enrichplot)
+
+head(fgseaRes3)
+head(fgseaRes_unique2)
+#listpathway<-fgseaRes[,c("pathway","padj","ES")]
+#head(listpathway)
+#topPathwaysUp1 <- fgseaRes[ES > 0][head(order(padj), n=10), pathway]
+#listpathway <- listpathway[order(listpathway$padj),] #to sort based on padj
+#head(listpathway)
+#listpathway<-as.matrix(listpathway)
+
+topPathwaysUp1 <- fgseaRes_unique2[ES > 0][head(order(padj), n=10)]
+topPathwaysUp1<-topPathwaysUp1[,-2]
+topPathwaysUp1
+topPathwaysUp1<-topPathwaysUp1[,-3]
+topPathwaysUp1
+topPathwaysUp1<-topPathwaysUp1[,-3]
+topPathwaysUp1
+topPathwaysUp1<-topPathwaysUp1[,-(4:5)]
+topPathwaysUp1
+topPathwaysUp1<-as.data.frame(topPathwaysUp1)
+
+topPathwaysDown1 <- fgseaRes_unique2[ES < 0][head(order(padj), n=10)]
+topPathwaysDown1<-topPathwaysDown1[,-2]
+topPathwaysDown1
+topPathwaysDown1<-topPathwaysDown1[,-3]
+topPathwaysDown1
+topPathwaysDown1<-topPathwaysDown1[,-3]
+topPathwaysDown1
+topPathwaysDown1<-topPathwaysDown1[,-(4:5)]
+topPathwaysDown1
+topPathwaysDown1<-as.data.frame(topPathwaysDown1)
+
+
+topPathways1 <- rbind(topPathwaysUp1, rev(topPathwaysDown1)) #merge rows
+topPathways1
+topPathways1<-as.data.frame(topPathways1)
+topPathways1
+
+#https://stephenturner.github.io/deseq-to-fgsea/#using_the_fgsea_package
+#ggplot(topPathways1, aes(reorder(pathway, NES), NES)) +
+#  geom_col(aes(fill=padj<0.05&NES>0)) +
+#  coord_flip() +
+#  labs(x="Pathway", y="Normalized Enrichment Score",
+#       title="GSEA TOP 10 UP AND DOWN REGULATED PATHWAYS \n OGT KD 606 10 MIN. vs GFP 10 MIN.") + 
+#  theme_minimal()+
+#  theme(text = element_text(face = "bold"))
+
+#Pathways with underscore
+
+# 1. Clean the data frame FIRST to fix the "2" and underscores
+topPathways1 <- topPathways1 %>%
+  mutate(
+    # Fix the specific "2" pathway to "Module 2"
+    pathway = ifelse(pathway == "2" | pathway == "module_2", "Module 2", pathway),
+    # Remove all underscores from all pathway names
+    pathway = gsub("_", " ", pathway)
+  )
+
+topPathways1
+ggplot(topPathways1, aes(reorder(pathway, NES), NES)) +
+  # Removed color="black" to take away the borders around the bars
+  geom_col(aes(fill = NES > 0)) + 
+  scale_fill_manual(
+    values = c("TRUE" = "#C21E56", "FALSE" = "#008080"), 
+    labels = c("TRUE" = "Upregulated", "FALSE" = "Downregulated"),
+    name = "Direction"
+  ) +
+  coord_flip() +
+  labs(
+    x = "Pathway", 
+    y = "Normalized Enrichment Score (NES)",
+    title = "GSEA: Top 10 Up and Down Regulated Pathways \n OGT KD 605 10 MIN. vs GFP 10 MIN."
+  ) + 
+  theme_bw() + 
+  theme(
+    # lineheight = 1.5 creates the space between the two title lines
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14, lineheight = 1.2),
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(face = "bold", color = "black"),
+    # This keeps the border around the whole plot, but not the bars
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 1.2),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(face = "bold")
+  )
 
