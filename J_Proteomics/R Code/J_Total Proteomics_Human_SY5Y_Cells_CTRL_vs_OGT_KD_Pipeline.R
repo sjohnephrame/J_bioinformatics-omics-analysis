@@ -2595,3 +2595,122 @@ ggplot(topPathways1, aes(reorder(pathway, NES), NES)) +
     legend.text = element_text(face = "bold")
   )
 
+##############################################################################################################            
+            
+#========================#
+#J_HEATMAP
+#========================#
+
+#--------------------------------#
+#OGT KD 606 10 MIN VS GFP 10 MIN
+#--------------------------------#
+
+head(prot.list2)
+head(sortupdownROGTTENGFPTEN)
+
+# 1. Filter for adjusted p-value < 0.05
+sig_only <- sortupdownROGTTENGFPTEN[sortupdownROGTTENGFPTEN$adj.P.Val.ROGTTEN.GFPTEN < 0.05, ]
+
+# 2. Top 20 Up of sorted list
+top_20_up <- head(sig_only, 20)
+
+# 3. Top 20 Down (Bottom of the list)
+top_20_down <- tail(sig_only, 20)
+head(top_20_down)
+top_20_down
+# 4. Combining them
+heatmap_df <- rbind(top_20_up, top_20_down)
+
+plot_mat <- cbind(
+  LogFC = heatmap_df$logFC.ROGTTEN.GFPTEN,
+  Significance = heatmap_df$adj.P.Val.ROGTTEN.GFPTEN
+)
+rownames(plot_mat) <- rownames(heatmap_df)
+plot_mat
+
+# 1. Create an empty matrix with the correct dimensions
+display_mat <- matrix("", nrow = nrow(plot_mat), ncol = ncol(plot_mat))
+
+# 2. Fill the first column (LogFC)
+display_mat[, 1] <- as.character(round(plot_mat[, 1], 2))
+
+# 3. Fill the second column (Significance) 
+display_mat[, 2] <- formatC(plot_mat[, 2], format = "e", digits = 2)
+
+display_mat
+
+# 1. Create a matrix for colors where both columns ARE the LogFC
+color_mat <- cbind(plot_mat[, 1], plot_mat[, 1]) 
+
+# 2. Creating the Heatmap
+
+pheatmap(color_mat, 
+         cluster_cols = FALSE, 
+         cluster_rows = TRUE,
+         display_numbers = display_mat,  # Shows the text you want
+         number_color = "black",
+         color = colorRampPalette(c("#0072B2", "white", "#E69F00"))(256),
+         # Center the scale so 0 is white
+         breaks = seq(-max(abs(plot_mat[,1])), max(abs(plot_mat[,1])), length.out = 257),
+         labels_col = c(expression(bold("LogFC")), expression(bold("Adj. P-Value"))),
+         angle_col = 0,  # 0 degrees = perfectly horizontal
+         main = ("OGT KD 606 10 MIN VD GFP 10 MIN"))
+
+
+#--------------------------------#
+#OGT KD 605 10 MIN VS GFP 10 MIN
+#--------------------------------#
+
+head(prot.list2)
+head(sortupdownOGTTENGFPTEN)
+
+# 1. Filter for adjusted p-value < 0.05
+sig_only <- sortupdownOGTTENGFPTEN[sortupdownOGTTENGFPTEN$adj.P.Val.OGTTEN.GFPTEN < 0.044, ]
+
+# 2. Get top 20 Up of sorted list
+top_20_up <- head(sig_only, 20)
+top_20_up
+# 3. Get top 20 Down (Bottom of the list)
+top_20_down <- tail(sig_only, 20)
+head(top_20_down)
+top_20_down
+# 4. Combine them
+heatmap_df <- rbind(top_20_up, top_20_down)
+heatmap_df
+plot_mat <- matrix(c(as.numeric(heatmap_df$logFC.OGTTEN.GFPTEN), 
+                     as.numeric(heatmap_df$adj.P.Val.OGTTEN.GFPTEN)), 
+                   ncol = 2)
+colnames(plot_mat) <- c("LogFC", "Significance")
+rownames(plot_mat) <- rownames(heatmap_df)
+plot_mat
+
+# 1. Create an empty matrix with the correct dimensions
+display_mat <- matrix("", nrow = nrow(plot_mat), ncol = ncol(plot_mat))
+
+# 2. Fill the first column (LogFC)
+display_mat[, 1] <- as.character(round(plot_mat[, 1], 2))
+
+# 3. Fill the second column (Significance) 
+display_mat[, 2] <- formatC(plot_mat[, 2], format = "e", digits = 2)
+
+display_mat
+
+# 1. Create a matrix for colors where both columns ARE the LogFC
+color_mat <- cbind(plot_mat[, 1], plot_mat[, 1]) 
+
+# 2. Creating the Heatmap
+
+pheatmap(color_mat, 
+         cluster_cols = FALSE, 
+         cluster_rows = TRUE,
+         display_numbers = display_mat,  # Shows the text you want
+         number_color = "black",
+         color = colorRampPalette(c("#0072B2", "white", "#E69F00"))(256),
+         # Center the scale so 0 is white
+         breaks = seq(-max(abs(plot_mat[,1])), max(abs(plot_mat[,1])), length.out = 257),
+         labels_col = c(expression(bold("LogFC")), expression(bold("Adj. P-Value"))),
+         angle_col = 0,  # 0 degrees = perfectly horizontal
+         main = ("OGT KD 605 10 MIN VD GFP 10 MIN"))
+
+
+
