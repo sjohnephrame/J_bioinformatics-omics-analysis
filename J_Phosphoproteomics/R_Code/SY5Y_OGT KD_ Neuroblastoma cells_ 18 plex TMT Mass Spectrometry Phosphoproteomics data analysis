@@ -4,7 +4,7 @@
 #===================================================================================
 
 # Clear environment
-rm(list = ls())
+#rm(list = ls())
 #dir.create() - creates a folder (directory) on your computer.
 
 # Attach libraries
