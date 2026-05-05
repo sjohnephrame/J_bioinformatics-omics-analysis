@@ -78,17 +78,6 @@ head(new_dat2)
 head(new_dat3)
 new_dat4<-new_dat3
 
-#==================#
-#remove duplicates
-#==================#
-
-d <- duplicated(new_dat4$Symbol)
-head(d)
-new_dat4 <- new_dat4[!d,]
-nrow(new_dat4)
-dim(new_dat4)
-#[1] 7794   8 after removing duplicates
-
 #but we need like matrix with no symbols
 
 head(new_dat4)
