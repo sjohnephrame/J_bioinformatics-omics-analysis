@@ -962,9 +962,9 @@ colSums(pdat15_filtered_check[, target_cols] < 1e-5, na.rm = TRUE)
 
 #Therefore, Imputation not needed
 
-#=================================================================
-# Summarize duplicates by Median intensity per site (most common)
-#=================================================================
+#===========================================================================================================================================#
+# Summarize duplicates by Median intensity per site (most common - for technical replicates); but here we dont have technical replicates
+#===========================================================================================================================================#
 
 library(dplyr)
 
