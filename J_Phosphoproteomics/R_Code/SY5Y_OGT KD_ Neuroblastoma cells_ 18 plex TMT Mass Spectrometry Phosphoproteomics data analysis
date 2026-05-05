@@ -1,9 +1,13 @@
-#-----------------------------------------------------------------------------------------------------------------------------
-#J_Phosphoproteomics Analysis
-#SY5Y_OGT KD_ Neuroblastoma cells_ 18 plex TMT Mass Spectrometry Phosphoproteomics data analysis
-#-----------------------------------------------------------------------------------------------------------------------------
 
-# Attach librarues
+#===================================================================================
+#J_18-Plex TMT-Phosphoproteomics analysis_SY5Y OGT Knockdown (KD) Neuroblatoma cells
+#===================================================================================
+
+# Clear environment
+rm(list = ls())
+#dir.create() - creates a folder (directory) on your computer.
+
+# Attach libraries
 library(BiocManager)
 library(readxl)
 library(tidyverse)
@@ -16,21 +20,86 @@ library(qvalue)
 # Load helper functions
 path.to.functions = "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\functions2.R"
 source(path.to.functions)
+
+#source(path/to/my_functions.R): In R, the source() function executes the script 
+#at the specified path, making its functions and variables available in the 
+#current environment.
+
 extract_string = function(x, k, pos) unlist(lapply(strsplit(x, k), function(y) y[pos]))
+#gene.symbol = extract_string(de$tt$Symbol, "\\.", 1)
+#strsplit(x, "\\."): Breaks a string like "ENSG000001.2" into two parts: [1] "ENSG000001" and [2] "2".
+
+#-------------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------------------------------------
+#code explanation:
+
+#extract_string = function(x, k, pos) unlist(lapply(strsplit(x, k), function(y) y[pos]))
+
+#The overall result is a list containing the elements extracted from each string at the specified position. 
+
+#Usage: DEA => txa = extract_string(colnames(dat1), "_", 1) 
+
+#eg: GFP_2: O/P: GFP
+
+#function(x, k, pos) = text (x)=colnames(dat1), a separator (k=_),
+#and the position we want to grab the piecce from (pos=1).
+#This sets up the "controls." You need to tell R what to split (x), where to cut it (k), and which piece to keep (pos).
+#unlist= Make the list flat and easier to use = Otherwise it'll be like folders
+#[1] 
+#apple etc - Not easier to use
+#lapply= list apply 
+#l=The result is always a list.
+#apply: It applies a specific function to each element Of the list.
+#Format: lapply(X, FUNCTION, ...) 
+#strsplit(x, k) = Split string X at separator k 
+#"messy." It returns a List (folders)
+#lapply(strsplit(x, k), function(y) y[pos]): Since strsplit created folders, 
+#lapply reaches into each folder (y) and grabs the specific piece from the pos we want
+#Here, strsplit(x="colnames(dat1)", k="_") = Split string X at separator k => GFP_2 will be: "GFP" "2"
+#Here pos=1 so lapply(strsplit(x="colnames(dat1)", k="_"), function(y) y[pos=1]): O/P: GFP
+
+
+#unlist(...): This converts the list of extracted elements back into a single vector.
+
+
+#-------------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------------------------------------
+
+#=========================#
+# Proteomics Preprocessing ----
+#=========================#
+path.to.file = "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_updated_11924\\J_R ANALYSIS\\J_SAM\\J_PROTEOMICS R CODE\\proteomic_example_data - Copy.xlsx"
+sheet.name = NULL
+sheet.range = "A5:AW5801"
+# Proteomic data 
+dat = read_xlsx(path = path.to.file, sheet = sheet.name, range = sheet.range)
+
+# Column names has all of the sample information we need
+colnames(dat)
+data1<-dat
+# e.g., F142: Fractionation number... a specific 'run' of the Mass Spec machine
+# e.g., UA4427: Unique specimen ID
+# OGA-KO, OGT-KO, TMG: treatments
+
+#dat = sam file
+dat = add_symbols(dat) # This returns unique gene symbols by numbering any duplicates. Be careful!
+# Duplicates are made unique by appending '.2', '.3', etc. 
+# sum(grepl("\\.", dat$Symbol))
 
 #dat1=total proteomics
 dat1 = read_xlsx("C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_Total Proteome_R_High and Medium FDR.xlsx")
 colnames(dat1)
 data2<-dat1
 
-#pdata1=phosphoproteomics
-pdata1 = read_xlsx("C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_PHOSPHOPROTEOMICS\\J_Phosphoproteomics edited for R_V15_HIGH MEDIUM FDR.xlsx")
-colnames(pdata1)
-pdata2<-pdata1
-
-############################################################################################################
+#pdat1=phosphoproteomics
+#pdat1 = read_xlsx("C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_PHOSPHOPROTEOMICS\\J_Phosphoproteomics edited for R_V15_HIGH MEDIUM FDR.xlsx")
+pdat1 = read_xlsx("C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_PHOSPHOPROTEOMICS\\J_SY5Y_PHOSPHOPROTEOMICS for R_04172026_HIGH AND MEDIUM FDR V12.xlsx")
+colnames(pdat1)
+pdata2<-pdat1
 
 #total proteomics 
+colnames(dat1)
+#dat1<-dat1[,-(20:23)]
 colnames(dat1)
 names(dat1)[names(dat1) == 'Gene Symbol'] <- 'Symbol'
 colnames(dat1)
@@ -49,116 +118,170 @@ dim(dat1)
 #remove duplicates
 d <- duplicated(dat1$Symbol)
 head(d)
-dat1 <- dat1[!d,]
+#dat1 <- dat1[!d,]
 nrow(dat1)
 dim(dat1)
 #[1] 9206   20 after removing duplicates
 
 #phosphoproteomics
-colnames(pdata1)
-pdata2<-pdata1
-colnames(pdata2)
-pdata2<-pdata2[, -c(7,26)] # remove Master Protein Descriptions,Confidence (by Search Engine): Sequest HT (because all high))
+colnames(pdat1)
+dim(pdat1) #[1] 32559    26
+pdat2<-pdat1
+colnames(pdat2)
+pdat2<-pdat2[, -c(7,26)] # remove Master Protein Descriptions,Confidence (by Search Engine): Sequest HT (because all high))
+#•	Sequest HT confidence = search engine opinion
+#•	Confidence (plain) = statistically validated final decision
 
-colnames(pdata2)
-pdata3<-pdata2
-colnames(pdata3)
-dim(pdata3) # 32559    24 
+#Sequest HT Confidence = Is this the right peptide?
+#ptmRS Probability = Is this the right phosphorylation site?
+
+colnames(pdat2)
+pdat3<-pdat2
+colnames(pdat3)
+dim(pdat3) # 32559    24 
 
 #after filtering for high and medium FDR (Confidence column - was already filtered in original file)
 #32559 Phosphopeptides found 
 
-pdata3<-pdata3[, -c(1)] #remove confidence since already filtered for high and medium fdr
-colnames(pdata3)
-head(pdata3)
-dim(pdata3) # 32559    23 # row, column Because confidence column removed
+pdat3<-pdat3[, -c(1)] #remove confidence since already filtered for high and medium fdr
+colnames(pdat3)
+head(pdat3)
+dim(pdat3) # 32559    23 # row, column Because confidence column removed
 
 #Keep for PhosR: 
 #Master Protein Accessions (P29966), 
 #Modifications in Master Proteins (P29966 1xPhospho [S/T], Q9UQ35 1xPhospho [S2729]),
 #Annotated Sequence ([K].TAAKGEAAAERPGEAAVASSPSKANGQENGHVK.[V]), Quantification columns
-
 #remove: 
 #Modifications (3xDeamidated [N25; Q27; N29]; 1xPhospho [S/T]; 3xTMTpro [K4; K23; K33]; 1xTMTpro [N-Term]),
 #Positions in Master Proteins (gives range: P29966 [8-40]) (if site already explicit)
 
-#Note: pdata3 has all data before removing for phosr (except for confidence as It's already been filtered)
-
-dim(pdata3) # 32559    23 # row, column Because confidence column removed
+#Note: pdat3 has all data before removing for phosr (except for confidence as It's already been filtered)
+dim(pdat3) # 32559    23 # row, column Because confidence column removed
 
 #No filtering again for PhosR
-pdata4<-pdata3
-colnames(pdata4)
-dim(pdata4) # 32559    23 # row, column Because confidence column removed
-pdata4<-pdata4[, -c(2)] # Remove Modifications
-head(pdata4)
-colnames(pdata4)
-dim(pdata4) # 32559    22 # row, column Because Modifications column removed
+pdat4<-pdat3
+colnames(pdat4)
+dim(pdat4) # 32559    23 # row, column Because confidence column removed
+head(pdat4$Modifications) #Includes all TMT deamidation etc.
+pdat4<-pdat4[, -c(2)] # Remove Modifications
+head(pdat4)
+colnames(pdat4)
+dim(pdat4) # 32559    22 # row, column Because Modifications column removed
 
-pdata5<-pdata4
-colnames(pdata5)
-dim(pdata5) # 32559    22 # row, column Because Modifications column removed
+pdat5<-pdat4
+colnames(pdat5)
+dim(pdat5) # 32559    22 # row, column Because Modifications column removed
 
 library(dplyr)
-pdata5 <- pdata5 %>%
+head(pdat4$`Master Protein Accessions`) #Accession number -needed
+head(pdat4$`Annotated Sequence`) #sequence - not needed for now
+head(pdat4$`Positions in Master Proteins`) #range - not needed
+head(pdat4$`Modifications in Master Proteins`) #Ser/Thr and residue nos. - needed
+
+pdat5 <- pdat5 %>%
   relocate("Master Protein Accessions", .before = "Annotated Sequence")
-colnames(pdata5)
-pdata5 <- pdata5 %>%
+colnames(pdat5)
+pdat5 <- pdat5 %>%
   relocate("Modifications in Master Proteins", .before = "Annotated Sequence")
-colnames(pdata5)
-pdata5 <- pdata5 %>%
+colnames(pdat5)
+pdat5 <- pdat5 %>%
   relocate("Positions in Master Proteins", .after = "606103SUM")
-colnames(pdata5)
-dim(pdata5) # 32559    22 # row, column Because Modifications column removed
+colnames(pdat5)
+dim(pdat5) # 32559    22 # row, column Because Modifications column removed
 
 #Positions in Master Proteins (gives range) - remove later if not needed
-#pdata 5 has most columns needed Arranged in a reasonable order
+#pdat 5 has most columns needed Arranged in a reasonable order
+
 
 #-------------------------------------------------------------------------------------------
 #PhosR for data processing of phosphoproteomics data
 #-------------------------------------------------------------------------------------------
 
+#generally should not blindly remove duplicates the way you might in standard proteomics 
+#— because what looks like a “duplicate” often represents biologically meaningful differences
+#Same peptide, different phosphorylation site = NOT a duplicate
+#Same site, different charge state = usually NOT a duplicate
+#Same site detected multiple times = depends
+#on Sequence •	Modification site •	Charge state •	Run - must confirm it’s a 
+#technical repeat, not a distinct feature
 #In phosphoproteomics, biological interpretation is site-specific, not protein-level.
 
 #Step 1 — Create a Unique Phosphosite ID 
 
-#Need to combine - Protein + Site position
+#We have Master Protein Accessions = protein ID
+#Annotated Sequence = modified peptide
+#Positions in Master Proteins = phosphosite position
+#SUM columns = quantitative intensities
+#our columns include:
+#	Annotated Sequence,Modifications,PSMs,XCorr,DeltaScore,Percolator q-Value,Percolator PEP
+#They are all peptide-spectrum match (PSM) metrics.
+# true PTM Site report would instead have things like:
+# •	One row per phosphosite
+#Site position column (separate from peptide range)
+#	Localization probability (ptmRS / PhosphoRS probability)
+#	Site-level confidence score
+#WE do not have:
+# •	ptmRS probability,PhosphoRS site probability-Localization probability column
 
-pdata6<-pdata5
-colnames(pdata6)
-dim(pdata6) # 32559    22 # row, column Because Modifications column removed
+#Need to combine - Protein + Site position
+#, localization probabilities (such as ptmRS, PhosphoRS, or Ascore) are 
+#considered mandatory for high-quality phosphoproteomics
+
+#Consequences of Omitting Them
+#If you  dont use a localization probability tool, you might report a site 
+#that is, upon closer inspection of the MS/MS spectrum, not actually the site 
+#of modification. This leads to incorrect biological conclusions about kinase signaling pathways
+
+#install.packages("writexl")
+#library(writexl)
+#write_xlsx(pdat5, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat5.2.xlsx")
+
+
+#P29966 [S/T] = Could be serine OR threonine in the peptide
+#P29966 [S] = It’s on a serine, but we don’t know which one
+######## we need ########
+#P29966 1xPhospho [T150]
+#P29966 2xPhospho [S145; S147]
+
+#So filter out ambiguous sites before running phosR.
+
+pdat6<-pdat5
+colnames(pdat6)
+dim(pdat6) # 32559    22 # row, column Because Modifications column removed
 
 library(dplyr)
 library(stringr)
 
+
 #https://www.bioconductor.org/packages/release/bioc/vignettes/PhosR/inst/doc/PhosR.html
+
 #if (!require("BiocManager", quietly = TRUE))
  # install.packages("BiocManager")
+
 #BiocManager::install("PhosR")
 library(PhosR)
 
 #We need Clean phospho site ID : 
 #Q9UQ35_S2729
 
-head(pdata6)
+head(pdat6)
 # We have 
 #P29966 1xPhospho [S/T]
 #Q5JTV8 2xPhospho [S156; S157]
 
 #So process data to transform to clean phospho site ID
-
 #1st we need to change some column names to make it easy to process data
+pdat7<-pdat6
+colnames(pdat7)
+names(pdat7)[names(pdat7) == 'Master Protein Accessions'] <- 'Accessions'
 
-pdata7<-pdata6
-colnames(pdata7)
-names(pdata7)[names(pdata7) == 'Master Protein Accessions'] <- 'Accessions'
+names(pdat7)[names(pdat7) == 'Modifications in Master Proteins'] <- 'Modifications'
+names(pdat7)[names(pdat7) == 'Annotated Sequence'] <- 'AnnSequence'
+names(pdat7)[names(pdat7) == 'Positions in Master Proteins'] <- 'PositionRange'
+colnames(pdat7)
 
-names(pdata7)[names(pdata7) == 'Modifications in Master Proteins'] <- 'Modifications'
-names(pdata7)[names(pdata7) == 'Annotated Sequence'] <- 'AnnSequence'
-names(pdata7)[names(pdata7) == 'Positions in Master Proteins'] <- 'Positions'
-colnames(pdata7)
-
-pdata8<-pdata7
+pdat8<-pdat7
 #https://www.bioconductor.org/packages//release/bioc/vignettes/PhosR/inst/doc/PhosR.html#:~:text=5.1.,-1%20Introduction&text=PhosR%20is%20a%20package%20for%20the%20all%2Drounded%20analysis%20of,of%20phosphoproteomic%20data%20with%20PhosR%20.
 #https://pyanglab.github.io/PhosR/articles/PhosR.html
 
@@ -172,13 +295,13 @@ pdata8<-pdata7
 
 #  Multi-phospho with partial ambiguity: 2xPhospho [S521; S/T] - Remove ambiguous site
 
-colnames(pdata8)
+colnames(pdat8)
 
-#So we are going to filter pdata8
+#So we are going to filter pdat8
 
 #1. Keep multi-protein peptides as a single row
 
-#view(pdata8)
+#view(pdat8)
 
 #Sample row 7=Q8NE71; Q5STZ8; Q8NE71 1xPhospho [S228]; Q5STZ8 1xPhospho [S229]
 #We need SiteID = "Q8NE71;Q5STZ8_S228/229"
@@ -187,59 +310,268 @@ library(dplyr)
 library(stringr)
 library(purrr)
 
-#pdata9<-pdata8
+pdat9<-pdat8
+colnames(pdat9)
+head(pdat9)
+check <- pdat9 %>% 
+  dplyr::filter(grepl("O43719", Modifications) & grepl("498", Modifications))
+print(check)
+#pdat15check %>% 
+#  dplyr::filter(SiteID == "O43719_S498") %>% 
+#  dplyr::select(SiteID, where(is.numeric))
+
+#pdat15check %>% 
+ # dplyr::filter(SiteID == "O43719_S494/S498") %>% 
+#  dplyr::select(SiteID, where(is.numeric))
+
+#dim(pdat15check) #[1] 24914    28
+
+#Looks like might have to add phosphopeptide siteID duplicates not median. !!!!!
+
+#===========================
+# Note: Function example: 
+#===========================
+
+# R: 
+#1. DEFINITION
+# We tell R what "multiply" does.
+
+#multiply <- function(a, b) {
+#  return(a * b)
+#}
+
+# 2. CALLING
+# We make use of the function.
+#result <- multiply(10, 2) 
+#print(result) # [1] 20
+
+#C
+#include <stdio.h>
+
+#// DECLARATION (Letting compiler know it exists)
+#int multiply(int a, int b);
+
+#int main() {
+# // CALLING
+# int result = multiply(10, 2);
+# printf("%d", result);
+# return 0;
+#}
+
+#// DEFINITION (The actual implementation)
+#int multiply(int a, int b) {
+#  return a * b;
+#}
 
 #-------------------------------------------------------------------------------------------
 #Create proper Site ID for PhosR
 #-------------------------------------------------------------------------------------------
 
-#Takes into account shared peptides, ambiguos sites
+pdat9<-pdat8
 
-#pdata 12
-pdata12<-pdata8
-pdata12 <- pdata12 %>%
+#pdat9old1<-pdat9
+#pdat9old2<-pdat9
+#pdat9old3<-pdat9
+
+#need to fix A0A0D9SFU5 1xAcetyl [N-Term]; 1xPhospho [S10]; 1xHexNAc [T8]
+
+#pdat 12
+pdat12<-pdat8
+pdat12 <- pdat12 %>%
   mutate(
     
 #mutate() - used to add new columns or modify existing ones in a data frame, all within a readable pipeline.
 # %>% = “then do this”:
+#%>% takes the output of the left-hand side and feeds it as the first argument to the function on the right-hand side.
 
+    #Example: 
+    #df %>% mutate(z = x + y) %>% mutate(w = z * 2)
+    # Read as:
+    # Take df
+    # Then create column z = x + y
+    # Then create column w = z*2    
+    
     # Flag multi-protein rows
-    SharedPeptide = str_detect(Accessions, ";"), 
+    SharedPeptide = str_detect(Accessions, ";"), #str_detect = true/false
     
     #str_detect(string, pattern) returns: a column that has TRUE → if the pattern is found 
     # FALSE → if NOT found
     
+  
     # Clean accession formatting
     ProteinAccession_clean = gsub(";\\s*", ";", Accessions), #Q8NE71; Q5STZ8 Becomes Q8NE71;Q5STZ8
     
     #gsub() = global substitution = gsub(pattern, replacement, x)
     #\\s* =\\s = space; *=any no of times, replace with ; of column accessions
     
-    # Extract resolved phosphosites only
     
+    # Extract resolved phosphosites only
+
+#===========================================================================================================================================
+    
+    #Trials:
+    
+    #Sites = str_extract_all(Modifications, "[STY][0-9]+"),
+    #Sites = str_extract_all(Modifications, "(?<=\\[)[STY][0-9]+(?=\\])"), #[S521; S/T] # extracts: "S521"
+    #Sites = str_extract_all(Modifications, "(?<=\\[)[STY][0-9]+"), #[S521; S/T] # extracts: "S521"
+    #Sites = str_extract_all(Modifications, "(?<=\\[)[STY/;][0-9][^\\]]+"),
+    #raw_sites = str_extract_all(Modifications, "(?<=\\[)[^\\]]+"),
+    #Sites = str_extract_all(raw_sites, "[STY][0-9]+"),
+    #Sites = map(raw_sites, ~ str_extract_all(.x, "[STY][0-9]+") %>% unlist()),
+#===========================================================================================================================================
+
     raw_sites = str_extract_all(Modifications, "Phospho \\[[^\\]]+\\]"),
     
-    #Match any sequence of characters as long as they are NOT a closing bracket after Phospho in []
+    #\[: Matches a literal opening bracket [. (The backslash is needed to "escape" it, as [ is a special regex character).
+    #[ and ]: These define a character class (a set of characters to match).
+    #^: When placed at the start of a character class, this means NOT (negation).
+    #\\]: This is an escaped closing bracket. Because ] normally ends the character class, 
+    #the backslash \ tells the regex engine to treat it as a literal "]" character.
+    #+: This is a quantifier meaning "one or more."
+    
+    #Overall: Match any sequence of characters as long as they are NOT a closing bracket after Phospho in []
     #Finds Phospho tags that contain specific site information inside brackets and not Acetyl/ HexNAc tags
     #eg. 1 row of rawsites = Phospho [S151; S153]; Phospho [S149; S151]
     
     Sites = map(raw_sites, ~ str_extract_all(.x, "[STY][0-9]+") %>% unlist()),
     
-  #map(raw_sites, ...) applies the function str_extract_all to each element of the list rawsites.
-  #Inside the function, str_extract_all(.x, "[STY][0-9]+") extracts all phosphosites from each bracket string.
-  #%>% unlist() flattens the results (which is itself a list) into a simple character vector per element.
-  #The final result, Sites, is a list-column of character vectors of phosphosites per row [S106, S205, S310]
+    #map(raw_sites, ...) applies the function str_extract_all to each element of the list rawsites.
+    #Inside the function, str_extract_all(.x, "[STY][0-9]+") extracts all phosphosites from each bracket string.
+    #%>% unlist() flattens the results (which is itself a list) into a simple character vector per element.
+    #The final result, Sites, is a list-column of character vectors of phosphosites per row [S106, S205, S310]
+    
+    #O/P=Sitse = S151; S153; S149; S151
+    
+#===========================================================================================================================================
+#Sites = map(raw_sites, ~ str_extract_all(.x, "[STY][0-9]+") %>% unlist()), 
+#Explanation:
+#===========================================================================================================================================
+
+    #raw_sites is a list of character vectors, each element holding bracket contents 
+    #(like Phospho [S151; S153]; Phospho [S149; S151]).
+#map(raw_sites, ...) applies the function to each element of that list.
+#Inside the function, str_extract_all(.x, "[STY][0-9]+") extracts all phosphosites from each bracket string.
+#%>% unlist() flattens the results (which is itself a list) into a simple character vector per element.
+#The final result, Sites, is a list-column of character vectors of phosphosites per row.
+    #map() is a function used to apply a specific action to every element of a list or vector. 
+#The map() function takes two primary inputs:
+ # .x: A list or vector you want to iterate over.
+# .f: The function you want to apply to each element. 
+#Instead of writing a manual for loop, you use map() to "transform" each piece of data. 
+#It always returns the results as a list.
+
+#str_extract_all(.x, "[STY][0-9]+") searches through a string and finds every instance 
+#that matches your pattern.
+#The .x: This represents the current item being processed by the map() function 
+#(in this case, one of the bracketed strings like "S228").
+
+#map(raw_sites, ...)	Start a loop over every item in the raw_sites list.
+#~	Shorthand that says "I am defining a quick function here".
+#.x	The current item from the list being handled right now.
+
+#The unlist() function takes that list and collapses it into a simple vector. 
+#Without unlist(): You have a list where each element is another list containing your phosphosites.
+#With unlist(): You get a single, clean character vector (like c("S228", "S229")) for each row. 
+#The %>% (Pipe) Operator
+#The %>% symbol is the pipe operator. It simply takes the output of the function on the left 
+#(str_extract_all) and "pipes" it directly into the function on the right (unlist). 
+#It makes the code much easier to read than nesting them like unlist(str_extract_all(...))
+
+
+    #[^\\]]+ => ^=not; \\]=closing bracket 
+    # ignores "S/T" (correct — unresolved site)
+    # \\[ matches literal [
+    # [STY][0-9]+ matches the phosphosite
+    #  \\] matches literal ]
+    # (?<=...) and (?=...) are lookbehind/lookahead so brackets aren’t included
+    # str_extract_all(string, pattern)
+    
+#Regex (short for regular expression) is a way to search, match, and manipulate 
+#text using patterns. Instead of searching for exact words, 
+#you describe a pattern, and regex finds anything that matches that pattern.
+#Instead of listing all possibilities, you can write a pattern:
+# [STY][0-9]+    - That's regex
+
+#Why do we write \\[ instead of \[ ?
+#Because you are dealing with two layers:R strings, Regular expressions (regex)
+#Layer 1: In Regex, [ has special meaning (it starts a character class).
+#If you want to match a literal [, you must escape it: 
+#\[ That tells regex: “Match an actual square bracket, not start a pattern.”
+#Layer 2: In R Strings: But in R, the backslash \ is itself special inside strings.
+#So to write a literal backslash in R, you must escape it: \\
+#So: What you want regex to see	What you must write in R
+# \[	"\\["
+# \]	"\\]"
+#Example #If you write:
   
-  #O/P=Sitse = S151; S153; S149; S151
-  
-    # Combine multiple sites safely
-    SiteCombined = map_chr(Sites, function(x) { 
+# "\\[S106\\]"
+
+#R interprets that as: \[S106\] Then regex interprets that as: match literal [S106]
+
+# Simple Rule to Remember Whenever you need \ in regex inside R: Write it twice: \\
+
+#The regular expression syntax (?<=...) represents a Positive Lookbehind Assertion. 
+#It is a zero-length assertion that tells the regex engine to match a pattern 
+#only if it is preceded by a specific, known pattern, 
+#without including that preceding pattern in the final match result                                                                                  
+#(?= ...) Called positive lookahead
+# It means: Match something only if it is followed by this pattern but don’t include it.                                                                                    
+                                                                                    
+    #It: Searches a string, Extracts all matches of a pattern & Returns a list 
+    #(because there can be multiple matches per row)
+    
+    #Part	Meaning
+    #[STY]	Match ONE letter: S or T or Y
+    #[0-9]	Match a number
+    #+	One or more digits
+    
+    #So it matches:S228, T564, Y100, S2729; But NOT: S/T,S,T  Because those don’t have numbers.
+    
+    # In your Modifications column you have things like:
       
-    #map_chr() applies a function to each element of a list or vector and returns a character vector.
-    #(unlike map() which keeps it as a list)
-     
+    #Q9UQ35 1xPhospho [S2729]
+    #Q6PKG0 2xPhospho [S521; S/T]
+    #Q8NE71 1xPhospho [S228]; Q5STZ8 1xPhospho [S229]
+    
+    #This line extracts only the confidently localized sites:
+      
+    #Example 1
+        #[S2729]
+        # extracts: "S2729"
+    
+    #Example 2
+      #[S521; S/T]
+      # extracts: "S521"
+      # ignores "S/T" (correct — unresolved site)
+    
+    #Example 3
+      #[S228]; [S229]
+      # extracts: "S228", "S229"
+    
+#Thus, our regex: [STY][0-9]+ will NOT match: S, S/T
+#It only matches uppercase S, T, or Y followed by numbers.
+
+#===========================================================================================================================================
+
+    
+# Combine multiple sites safely
+    SiteCombined = map_chr(Sites, function(x) { # Sites above - Searches a string, 
+
+      #map_chr() applies a function to each element of a list or vector and returns a character vector.
+      #(unlike map() which keeps it as a list)
+      
       #Site = S151; S153; S149; S151
+
+      #Syntax: map_chr(.x, .f, ...) map_chr(Sites, function(x))
       
+      #.x → your list or vector (Sites)
+      #.f → function to apply to each element
+      # Returns character vector (unlike map() which keeps it as a list)
+      #Here: Sites is a list of vectors from str_extract_all()
+      #Each x is one element of the list itself - a character vector of sites)
+      #Sites is the list of vectors you got from str_extract_all().
+      #x is each element of that list, x <- c("S106", "T205", "Y17")
+       
       if(length(x) == 0) return(NA_character_) # handle empty lists - gives NA
       
       #if length of Site==0 gives NA
@@ -247,22 +579,46 @@ pdata12 <- pdata12 %>%
       residues <- substr(x, 1, 1) # ["S", "S", "S", "S"] from [S151; S153; S149; S151]
       
       #substr(string, start, stop) extracts a substring from start to stop
-     
+      
+      #say x <- c("S106", "T205", "Y17")
+      #substr(string, start, stop) extracts a substring from start to stop
+      #start=1, stop=1 = first character Only, Applied to each element of x
+      #O/P= "S" "T" "Y"
+      #residues
+      #[1] "S" "T" "Y"
       
       numbers  <- gsub("[STY]", "", x) # ["151", "153", "149" "151"] from [S151; S153; S149; S151]
       
       #gsub(pattern, replacement, x) → replaces all matches of pattern with replacement in x
       
-        paste(x, collapse = "/") 
+      #say x <- c("S106", "T205", "Y17") (Sites character vector)
+      #gsub(pattern, replacement, x) → replaces all matches of pattern with replacement in x
+      #[STY] → matches any single character that is S, T, or Y
+      #"" → replace with nothing (i.e., remove it)
+      #Result:
+      # numbers
+      # [1] "106" "205" "17"
+      
+      #x <- c("S106", "S205", "S310")
+      #residues <- substr(x, 1, 1)           # "S", "S", "S"
+      #numbers <- as.integer(gsub("[STY]", "", x))  # 106, 205, 310
+      
+      
+      # if(length(unique(residues)) == 1){
+       # paste0(residues[1], paste(numbers, collapse = "/"))
+      #} else {
+        paste(x, collapse = "/")
         
-      #x is each element of the Sites list, x <- c("S106", "T205", "Y17") collapsed as (S106/T205/Y17) 
-     #O/P: SiteCombined = S151/153/149/151
+        #x is each element of the Sites list, x <- c("S106", "T205", "Y17") collapsed as (S106/T205/Y17) 
+        #O/P: SiteCombined = S151/153/149/151
+        
+     # }
     }),
-
+#x is each element of that list, x <- c("S106", "T205", "Y17")
 # Create SiteID (ambiguous stays ambiguous)
+# SiteID = paste0(ProteinAccession_clean, "_", SiteCombined)
 
-
-SiteID = purrr::pmap_chr( 
+SiteID = purrr::pmap_chr(
   
   #pmap = parallel map across multiple inputs; chr = return character output
   
@@ -276,12 +632,12 @@ SiteID = purrr::pmap_chr(
     if (is.na(prot_col) | is.na(SiteComb)) return(NA_character_)
     
     if (!str_detect(prot_col, ";")) {
-      return(paste0(prot_col, "_", SiteComb)) 
-    
+      return(paste0(prot_col, "_", SiteComb))
+      
       #if did not detect ; in Q8NE71;Q5STZ8 i.e; Q8NE71 only detected, 
       #Paste Q8NE71_S151/153 (ProteinAccession_clean and Site Combined)
       
-      }
+    }
     
     # 1. Split proteins into a vector
     prots <- str_split(prot_col, ";")[[1]] #protol=ProteinAccession_clean = Q8NE71;Q5STZ8
@@ -291,12 +647,12 @@ SiteID = purrr::pmap_chr(
     #If you forgot the [[1]] and tried to use prots[1], you would get the entire list back
     #instead of the first protein ID. Using [[1]] ensures you are working with the data itself rather than the "container" it came in.
     
-    #prots isolate individual protein accessions when multiple proteins are listed in a single cell with ;
+    #prots - isolate individual protein accessions when multiple proteins are listed in a single cell with ;
+    #prot_col=Q8NE71;Q5STZ8 becomes
     #O/P: prots= "Q8NE71" "Q5STZ8"
     
-   
-     # 2. Split raw sites into individual groups 
-    phospho_parts <- str_split(site_col, "(?<=\\]);\\s*") 
+    # 2. Split raw sites into individual groups 
+    phospho_parts <- str_split(site_col, "(?<=\\]);\\s*") #raw_sites=sit_col
     
     #site_col=raw_sites =  Phospho [S151; S153]; Phospho [S149; S151]
     
@@ -304,36 +660,38 @@ SiteID = purrr::pmap_chr(
     #splt string Phospho [S151; S153]; Phospho [S149; S151]
     
     #O/P phospho_parts="Phospho [S151; S153]" "Phospho [S149; S151]"
-  
+    
     # 3. Extract content inside brackets (e.g., [S151; S153] becomes [S151/S153])
     clean_sites <- str_extract(phospho_parts, "(?<=\\[).*(?=\\])") %>% 
-    str_replace_all(";", "/") 
+    str_replace_all(";", "/")
     
     #str_extract = pulls everything within bracket
-    #. (The Dot):  matches any single character (except for a newline)
+    #. (The Dot):  matches any single character (except for a newline), *= any no of times
+    #str_replace_all(";", "/") replaces ; with /
     #phospho_parts="Phospho [S151; S153]" "Phospho [S149; S151]" becomes
     #O/P clean_sites = "S151/S153" "S149/S151"
     
-    # 4. Combine: Protein_Site (e.g., "a_s22,s33")
+    # 4. Combine: Protein_Site:
     combined_vec <- paste(prots, clean_sites, sep = "_")
     
     #O/P: prots= "Q8NE71" "Q5STZ8"
     #O/P clean_sites = "S151/S153" "S149/S151"
     #O/P combined_vec = "Q8NE71_S151/S153" "Q5STZ8_S149/S151"
     
-    # 5. Collapse back to one string
+    # 5. Collapse back to one string: 
     return(paste(combined_vec, collapse = ";"))
     
+    #O/P combined_vec = "Q8NE71_S151/S153" "Q5STZ8_S149/S151"
     #O/P SiteID = "Q8NE71_S151/S153;Q5STZ8_S149/S151"
     
-    }))
+  }))
      
 library(dplyr)
 library(purrr)
 library(writexl)
 
 
-pdata12.3 <- pdata12 %>%
+pdat12.3 <- pdat12 %>%
   # Flatten list-columns into simple strings for Excel
   mutate(
     Sites = sapply(Sites, function(x) {
@@ -345,15 +703,19 @@ pdata12.3 <- pdata12 %>%
   )
 
 # Export to Excel
-#write_xlsx(pdata12.3, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdata12.3.xlsx")
+#write_xlsx(pdat12.3, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat12.3_New_04202026.xlsx")
+
+head(pdat12.3)
+colnames(pdat12.3) #has all columns including SiteID
 
 #-------------------------------------------------------------------------------------------
-#Filter_NA (missing values)
+#Filter_NA
 #-------------------------------------------------------------------------------------------
 
-pdata13<-pdata12.3 #[1] 32559    28
-colnames(pdata13)
-table(apply(pdata13, 1, function(x) sum(is.na(x))))
+pdat13<-pdat12.3 #[1] 32559    28
+dim(pdat12.3)
+colnames(pdat13)
+table(apply(pdat13, 1, function(x) sum(is.na(x))))
 #0     3     6 
 #24914  7634    11 
 
@@ -361,63 +723,376 @@ table(apply(pdata13, 1, function(x) sum(is.na(x))))
 
 #In the example above, 24914 rows have 0 missing values, while 11 rows are missing 6 pieces of data.
 
-#apply(pdata13, 1, ...): This tells R to look at the data row by row (1 means rows, 2 would mean columns).
+#apply(pdat13, 1, ...): This tells R to look at the data row by row (1 means rows, 2 would mean columns).
 #function(x) sum(is.na(x)): For every row, it counts how many cells contain an NA.
 #table(...): This summarizes the counts into a readable format
 
+dim(pdat13) #[1] 32559    28 #has all rows after filtering only for High and medium FDR
+
+head(pdat13$SiteID)
+
+#======================================================
+# Filter NA - Keep only rows where SiteID is not NA
+#======================================================
+
+pdat13_filtered <- pdat13[!is.na(pdat13$SiteID) & pdat13$SiteID != "", ] #For SiteID only
+#The comma at the end (pdat13$SiteID != "",) is needed when using it inside the square brackets to select rows
+dim(pdat13_filtered) #24914    28
+
+pdat14<-pdat13_filtered #has only rows where SiteID is not NA
+
+#==================================================================================================
+#=========================
+#Too aggressive na.omit
+#=========================
 # Reduce to proteins with no missing data.
-dim(pdata13) #[1] 32559    28 without filtering
-pdata14 = na.omit(pdata13)
-dim(pdata14)
-#[1] 24914    28
+#dim(pdat13) #[1] 32559    28 without filtering
+#pdat14 = na.omit(pdat13) # Too aggressive
+#==================================================================================================
+
+dim(pdat14)
+colnames(pdat14)
+#[1] 24914    28 #has only rows where SiteID is not NA
 
 ## Export to Excel
-#write_xlsx(pdata14, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdata14.xlsx")
+#write_xlsx(pdat14, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat14.xlsx")
 
-#======================================================================================
-# Data Filtering and Quality Control Plots
-#======================================================================================
+#-------------------------------------------------------------------------------------------------
+#Summarize Duplicates
+#-------------------------------------------------------------------------------------------------
 
-#-------------------------------------------------------------------------------------------
-#Remove duplicates
-#-------------------------------------------------------------------------------------------
-
-colnames(pdata14)
-nrow(pdata14)
-dim(pdata14) #[1] 24914    28 - No missing values but have duplicate SiteID
-pdata15<-pdata14
-colnames(pdata15)
-dim(pdata15) #[1] 24914    28 - No missing values but have duplicate SiteID
-d <- duplicated(pdata15$SiteID)
-head(d)
-duplicate_rows <- which(d)
+#==================================================================================================
+#Remove duplicates - Can be too aggressive for phosphoproteomics, so try to summarize duplicates
+#==================================================================================================
+#colnames(pdat14)
+#nrow(pdat14)
+#dim(pdat14) #[1] 24914    28 - No missing values but have duplicate SiteID
+#pdat15<-pdat14
+#colnames(pdat15)#
+#dim(pdat15) #[1] 24914    28 - No missing values but have duplicate SiteID
+#d <- duplicated(pdat15$SiteID)
+#head(d)
+#duplicate_rows <- which(d)
 
 # To see the first 10 duplicate row numbers
-head(duplicate_rows)
+#head(duplicate_rows)
 
-pdata16 <- pdata15[!d,]
-dim(pdata16) #[1] 16155    28 - No missing values and w/o duplicates SiteID
+#pdat16 <- pdat15[!d,]
+#dim(pdat16) #[1] 16155    28 - No missing values and w/o duplicates SiteID
 
-#pdata15[!d,]: This keeps only the rows where d is FALSE (the unique ones). The ! is a "NOT" operator, and the comma , tells R to keep all columns.
-#d <- duplicated(pdata15$SiteID): This creates a logical vector (TRUE/FALSE).
+#pdat15[!d,]: This keeps only the rows where d is FALSE (the unique ones). The ! is a "NOT" operator, and the comma , tells R to keep all columns.
+#d <- duplicated(pdat15$SiteID): This creates a logical vector (TRUE/FALSE).
 #FALSE: The first time a SiteID appears.
 #TRUE: Every time that same SiteID appears again later in the column.
 
 ## Export to Excel
-#write_xlsx(pdata15, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdata15_No missing values but have duplicate SiteID.xlsx")
-#write_xlsx(pdata16, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdata16_No missing values and withouo duplicates SiteID.xlsx")
+#write_xlsx(pdat15, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat15_No missing values but have duplicate SiteID.xlsx")
+#write_xlsx(pdat16, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat16_No missing values and withouo duplicates SiteID.xlsx")
+#==================================================================================================
 
-#=======================================================
-# Quality Control Plot - Bar Plot to see missing values
-#=======================================================
+dim(pdat14)
+#[1] 24914    28 #has only rows where SiteID is not NA
+
+colnames(pdat14)
+nrow(pdat14)
+dim(pdat14) #[1] 24914    28 - has only rows where SiteID is not NA but have duplicate SiteID
+pdat15<-pdat14
+colnames(pdat15)
+dim(pdat15) #[1] 24914    28 - has only rows where SiteID is not NA but have duplicate SiteID
+pdat15check<-as.data.frame(pdat15)
+#pdat15check<-pdat15check %>% filter(SiteID == "H3BTP3_T564") %>% select(SiteID, 1:5) 
+pdat15check %>% 
+  dplyr::filter(SiteID == "H3BTP3_T564") %>% 
+  dplyr::select(SiteID, where(is.numeric))
+pdat15check %>% 
+  dplyr::filter(SiteID == "O43719_S498") %>% 
+  dplyr::select(SiteID, where(is.numeric))
+dim(pdat15check) #[1] 24914    28
+
+#need to remove these all 0 rows before proceeding
+pdat15_filtered <- pdat15 %>%
+  filter(if_any(where(is.numeric), ~ .x > 0))
+#Filter=keep rows where any numeric column has a value > 0 (atleast 1 value)
+pdat15_filtered_check<-as.data.frame(pdat15_filtered)
+pdat15_filtered_check %>% 
+  dplyr::filter(SiteID == "H3BTP3_T564") %>% 
+  dplyr::select(SiteID, where(is.numeric))
+pdat15_filtered_check %>% 
+  dplyr::filter(SiteID == "O43719_S498") %>% 
+  dplyr::select(SiteID, where(is.numeric))
+dim(pdat15_filtered_check) #[1] 16748    28 - After removing all zero rows
+
+
+#where(is.numeric) = selects all numeric columns (likely your 18 TMT intensity columns)
+
+#if_any(...) = checks if any numeric column in a row satisfies the condition
+
+#~ .x > 0 = the condition is greater than 0
+
+#filter() = keeps rows where the condition is TRUE
+
+#n R, rows are kept using filter(), while columns are kept using select(). Your code already uses filter(), which works on rows.
+
+#where(is.numeric) = selects columns
+
+#if_any() = checks rows across those columns
+
+#filter() = keeps/removes rows
+
+#===================================
+#Check Duplicates
+#===================================
+dim(pdat15) #[1] 24914    28 - No missing values but have duplicate SiteID, all zero rows
+dim(pdat15_filtered_check) #[1] 16748    28 - After removing all zero rows
+
+#pdat15 #[1] 24914    28 - No missing values but have duplicate SiteID, all zero rows
+d <- duplicated(pdat15_filtered_check$SiteID) #creates logical vector (TRUE/FALSE) indicating which rows are duplicates
+head(d)
+duplicate_rows <- which(d)
+#FALSE: This is the first time R has seen this specific SiteID.
+# R does not consider the first occurrence a duplicate
+
+# To see the first 10 duplicate row numbers
+head(duplicate_rows)
+
+# Count duplicates by SiteID
+table(duplicated(pdat15$SiteID)) #Before removing all zero rows
+
+#FALSE  TRUE 
+#16155  8759 
+
+dim(pdat15_filtered_check) #[1] 16748    28 - After removing all zero rows
+table(duplicated(pdat15_filtered_check$SiteID))
+
+#FALSE  TRUE 
+#12298  4450
+12298+4450 #[1] 16748
+
+#Or to see which ones:
+  
+dup_sites <- pdat15_filtered_check$SiteID[duplicated(pdat15_filtered_check$SiteID)]
+head(dup_sites)
+
+#While "mean" can be used, the median is generally preferred in the context of 
+#phosphoproteomics to handle the inherent data variability and potential outliers
+
+#===========================#
+# Imputation if warranted
+#===========================#
+
+#====================================================#
+#Missing value Check
+#====================================================#
+
+dim(pdat15_filtered_check) #[1] 16748    28 - After removing all zero rows
+
+#1. which Rows have site ID = NA
+pdat15_filtered_check_site_na <- pdat15_filtered_check %>%
+  filter(is.na(SiteID))
+
+# To view:
+head(pdat15_filtered_check_site_na$SiteID)
+dim(pdat15_filtered_check_site_na)
+#[1] 0   28 #Because filtered all siteID
+
+
+#2. which Rows have all columns/values = 0 in target columns
+colnames(pdat15_filtered_check)
+target_cols <- c("GFP01SUM", "GFP02SUM", "GFP03SUM", "GFP101SUM", "GFP102SUM", "GFP103SUM", 
+                 "60501SUM", "60502SUM", "60503SUM", "605101SUM", "605102SUM", "605103SUM", 
+                 "60601SUM", "60602SUM", "60603SUM", "606101SUM", "606102SUM", "606103SUM")
+
+pdat15_filtered_check_all_zeros <- pdat15_filtered_check %>%
+  filter(if_all(all_of(target_cols), ~ .x == 0))
+
+#filter(...): The command used to pick specific rows.
+#if_all(...): This is the logic gate. It requires the condition to be true for every column you list.
+#If even one column has a value (like 0.5), the row is rejected.
+#all_of(target_cols): This tells the function exactly which columns to check.
+#Using all_of() is a "safe" way to use a character vector (your list of 18 SUM names) 
+#inside a tidyverse function.
+#~ .x == 0: This is the test.
+#The ~ (tilde) starts the rule.
+#The .x is a placeholder for "the value in the current column."
+#== 0 checks for an exact zero.
+#"Check the columns listed in target_cols. If Column 1 is 0 AND Column 2 is 0 
+#AND Column 3 is 0 (and so on...), then keep the row. 
+#If any column is not 0, throw the row away."
+
+
+# To view:
+head(pdat15_filtered_check_all_zeros)
+dim(pdat15_filtered_check_all_zeros) 
+#[1] 0   28 #Because removed all 0 rows
+
+##3. which Rows have atleast ONE columns/values = 0 in target columns
+
+pdat15_filtered_check_any_zeros <- pdat15_filtered_check %>%
+  filter(if_any(all_of(target_cols), ~ .x == 0))
+
+pdat15_filtered_check_mixed <- pdat15_filtered_check %>%
+  filter(if_any(all_of(target_cols), ~ .x == 0) & 
+           !if_all(all_of(target_cols), ~ .x == 0))
+
+
+# To view:
+head(pdat15_filtered_check_any_zeros)
+dim(pdat15_filtered_check_any_zeros) #[1] 0   28
+head(pdat15_filtered_check_mixed)
+dim(pdat15_filtered_check_mixed) #[1] 0   28
+#view(pdat15_filtered_check_mixed)
+#view(pdat15_filtered_check)
+head(pdat15_filtered_check)
+
+
+# Returns a logical vector (TRUE if the row has a zero)
+rows_with_zeros <- apply(pdat15_filtered_check[, target_cols], 1, function(x) any(x == 0))
+
+# See how many rows total have at least one zero
+sum(rows_with_zeros)
+
+# View those specific rows
+pdat15_filtered_check[rows_with_zeros, ]
+
+#Confirmed no single 0 rows.
+# Check for values less than a tiny threshold
+colSums(pdat15_filtered_check[, target_cols] < 1e-5, na.rm = TRUE)
+
+#Indicates no near 0 values
+
+#Therefore, Imputation not needed
+
+#=================================================================
+# Summarize duplicates by Median intensity per site (most common)
+#=================================================================
+
+library(dplyr)
+
+#pdat16 <- pdat15_filtered_check %>%
+#group_by(SiteID) %>%
+#summarize(across(where(is.numeric), median, na.rm = TRUE))
+
+colnames(pdat15_filtered_check)
+dim(pdat15_filtered_check) #[1] 16748    28 - No missing values and all 0 rows but have duplicate SiteID
+d <- duplicated(pdat15_filtered_check$SiteID) #creates logical vector (TRUE/FALSE) indicating which rows are duplicates
+head(d)
+
+#=================================================================
+#Aggressive Duplicate filtering by just removing all duplicates
+#=================================================================
+table(duplicated(pdat15_filtered_check$SiteID))
+#FALSE  TRUE 
+#12298  4450 
+pdat16.1 <- pdat15_filtered_check[!d,]
+dim(pdat16.1) #[1] 12298    28 - No missing values and w/o duplicates SiteID
+#But this is very aggressiveBecause keeps only the 1st row and removes the rest of the rows
+
+#====================================================================================================================================#
+#So Summarize duplicates by Adding (more common)/Median intensity per site (only if technical replicates) For phosphoproteomis
+#====================================================================================================================================#
+
+#This finds the median of all the duplicated rules
+table(duplicated(pdat15_filtered_check$SiteID))
+#FALSE  TRUE 
+#12298  4450 
+12298+4450 #[1] 16748
+pdat15_filtered_check %>% 
+  dplyr::filter(SiteID == "O43719_S498") %>% 
+  dplyr::select(SiteID, where(is.numeric))
+dim(pdat15_filtered_check) #[1] 16748    28
+
+pdat16.2 <- pdat15_filtered_check %>% 
+  group_by(SiteID) %>%
+  summarize(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) 
+pdat16.2<-as.data.frame(pdat16.2)
+dim(pdat16.2) #[1] 12298    19 #After Summing duplicates 
+head(pdat16.2)
+
+pdat16.3 <- pdat15_filtered_check %>% 
+  group_by(SiteID) %>%
+  summarize(across(where(is.numeric), ~ median(.x, na.rm = TRUE))) 
+pdat16.3<-as.data.frame(pdat16.3)
+dim(pdat16.3) #[1] 12298    19 #After Summarizing duplicates by Median intensity per site 
+head(pdat16.3)
+
+#========================#
+#Duplicate Sites Check
+#========================#
+
+dup_sites <- pdat15_filtered_check$SiteID[duplicated(pdat15_filtered_check$SiteID)]
+head(dup_sites)
+pdat15_filtered_check %>% 
+  dplyr::filter(SiteID == "H3BTP3_T564") %>% 
+  dplyr::select(SiteID, where(is.numeric))
+pdat15_filtered_check %>% 
+  dplyr::filter(SiteID == "O43719_S498") %>% 
+  dplyr::select(SiteID, where(is.numeric))
+
+pdat16.2 %>% 
+  dplyr::filter(SiteID == "H3BTP3_T564") %>% 
+  dplyr::select(SiteID, where(is.numeric))
+
+pdat16.2 %>%
+dplyr::filter(SiteID == "O43719_S498") %>% 
+dplyr::select(SiteID, where(is.numeric)) #summarizing all duplicates identities by median intensities; removed NA and all 0 columns
+
+367.2+1144.8+3193.8+2946.6
+
+# Export to Excel
+#write_xlsx(pdat15_filtered_check, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat15_filtered_check.xlsx")
+#write_xlsx(pdat16.1, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat16.1.xlsx")
+#write_xlsx(pdat16.2, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat16.2 new.xlsx")
+#write_xlsx(pdat16.5, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat16.5.xlsx")
+
+head(pdat16.2)
+dim(pdat16.2) #[1] 12298    19 After summarizing all duplicates identities by median intensities; removed NA and all 0 columns
+
+# All non-numeric, non-grouping columns are dropped automatically
+
+#group_by = Tells R to gather all rows that share the same SiteID.
+
+#summarize() = #Collapses duplicates into one row per SiteID
+#Returns a clean site-level matrix ready for downstream analysis
+
+#across() replaces the old summarize_at(), mutate_at() style and is the modern, 
+#tidyverse-standard way to apply a function to a set of columns.
+
+#Syntax:
+# across(.cols, .fns)
+#.cols = which columns to apply the function to
+#.fns = the function(s) to apply
+
+#where(is.numeric) = All columns that are numeric
+
+#~ median(.x, na.rm = TRUE) - anonymous function applied to each numeric column
+#Applies the median function to each column, na.rm = TRUE ignores missing values (important in MS data)
+
+#.x represents the current column in across()
+
+dim(pdat13) #[1] 32559    28 #has all rows after filtering only for High and medium FDR
+dim(pdat15) #[1] 24914    28 - has only rows where SiteID is not NA but have duplicate SiteID
+dim(pdat15_filtered_check) #[1] 16748    28 - After removing all zero rows to median summarize intensities 
+table(duplicated(pdat15_filtered_check$SiteID))
+#FALSE  TRUE 
+#12298  4450 
+12298+4450 #[1] 16748
+dim(pdat16.2) #[1] 12298   19  - No missing values and w/o duplicates SiteID (median summarized) - after removing all 0 rows
+table(duplicated(pdat16.2$SiteID))
+#FALSE 
+#12298
+colnames(pdat1) #Original file doesnt have symbols
+
+#=================================#
+# Bar Plot to see missing values
+#=================================#
 
 library(ggplot2)
 library(scales)
 # Create the data frame with your numbers
 attrition_data <- data.frame(
-  Step = factor(c("1. Raw Peptides", "2. Missing Value Filter", "3. Unique Site IDs"),
-                levels = c("1. Raw Peptides", "2. Missing Value Filter", "3. Unique Site IDs")),
-  Count = c(32559, 24914, 16155)
+  Step = factor(c("1. Raw Peptides", "2. Missing Value Filter", "3. Median Summarization of Duplicates"),
+                levels = c("1. Raw Peptides", "2. Missing Value Filter", "3. Median Summarization of Duplicates")),
+  Count = c(32559, 16748, 12298)
 )
 # Levels = This is the exact order I want these categories displayed
 
@@ -441,7 +1116,7 @@ ggplot(attrition_data, aes(x = Step, y = Count, fill = Step)) +
   #This above line controls the color palette used for the fill aesthetic in ggplot2.
   
   labs(title = "Phosphoproteomics Peptide Attrition Summary",
-       subtitle = "Data reduction from raw identification to unique site filtering",
+       subtitle = "Data reduction from raw identification to unique site filtering after median summarization of duplicates",
        x = "Processing Stage",
        y = "Number of Peptides") +
   
@@ -451,8 +1126,13 @@ ggplot(attrition_data, aes(x = Step, y = Count, fill = Step)) +
         plot.subtitle = element_text(hjust = 0.5, size = 12)
 ) #theme= Adjust default theme to what's needed
 
+dim(pdat13) #[1] 32559    28 #has all rows after filtering only for High and medium FDR
+dim(pdat15) #[1] 24914    28 - has only rows where SiteID is not NA but have duplicate SiteID
+dim(pdat15_filtered_check) #[1] 16748    28 - After removing all zero rows to median summarize intensities 
+dim(pdat16.2) #[1] 12298   19  - No missing values and w/o duplicates SiteID (median summarized) - after removing all 0 rows
+
 #-------------------------------------------------------------------------------------------------
-#log2 transformation
+#log2 transform 
 #-------------------------------------------------------------------------------------------------
 
 # log2 transform - to reduce skewness of a measurement variable 
@@ -462,80 +1142,170 @@ ggplot(attrition_data, aes(x = Step, y = Count, fill = Step)) +
 #dat_mat = as.matrix(log2(new_dat)) # with NAs
 #dim(dat_comp_mat)#4881   16
 
-dim(dat_comp1) #[1] 8334   19 before removing symbol
-head(dat_comp1) 
+#dim(dat_comp1) #[1] 8334   19 before removing symbol
+#head(dat_comp1) 
 
 #We need data clean like dat_comp1 to be able to do the analysis and plots
-dim(pdata16) #16155    28
-head(pdata16)
-colnames(pdata16)
-pdata17<-pdata16
-dim(pdata17) #16155    28
+#other cols except site id already removed
 
-pdata18 <- pdata17 %>%
-  relocate("SiteID", .before = "Accessions")
-colnames(pdata18)
-pdata19<-pdata18
-colnames(pdata19)
-dim(pdata19) #[1] 16155    28
-pdata19<-pdata19[, -c(2,3,4,23,24,25,26,27,28)] # Remove all columns except siteid and values
-colnames(pdata19)
-dim(pdata19) #[1] 16155    19
-head(pdata19)
-pdata20<-pdata19
-pdata20<-as.data.frame(pdata20)
-head(pdata20)
-rownames(pdata20) <- pdata20$SiteID #convert column value to row names
-head(pdata20)
-pdata21<-pdata20[, -c(1)] 
-head(pdata21)
-dim(pdata21) #[1] 16155    18
-head(dat_comp1)  
+dim(pdat16.2) #12298    19 #other cols except site id already removed; No missing values and w/o duplicates SiteID (median summarized)
 
-head(dat_comp1)
-dim(dat_comp1) #[1] 8334   18 after removing symbol # without NAs
-dat_comp_mat1 = as.matrix(log2(dat_comp1)) # without NAs
-head(dat_comp_mat1)
+head(pdat16.2)
+colnames(pdat16.2)
 
-pdata22<-pdata21
-head(pdata22)
-dim(pdata22) #[1] 16155    18 #removed missing values and duplicates; is a dataframe; Not matrix and log transformed; need for pca
-pdata22_mat = as.matrix(log2(pdata22)) # without NAs; matrix and log transformed
-head(pdata22_mat) # without NAs; matrix and log transformed
-dim(pdata22_mat) #[1] 16155    18 # without NAs; matrix and log transformed
+pdat20.2<-pdat16.2
+pdat20.2<-as.data.frame(pdat20.2)
+head(pdat20.2)
+rownames(pdat20.2) <- pdat20.2$SiteID #convert column value to row names
+head(pdat20.2)
+pdat21.2<-pdat20.2[, -c(1)] # Removed site id col as site ID converted to row name
+head(pdat21.2)
+dim(pdat21.2) #[1] 12298    18 #No missing values and w/o duplicates SiteID (median summarized)
 
-#======================================================================================
-# Quality Control Plot - density plot -  is applied to log10 transformed data in code 
-#======================================================================================
+#check
+#head(dat_comp1)
+#dim(dat_comp1) #[1] 8334   18 after removing symbol # without NAs
+#dat_comp_mat1 = as.matrix(log2(dat_comp1)) # without NAs
+#head(dat_comp_mat1)
 
+#==========================================#
+#log2 and dataframe to matrix transform 
+#==========================================#
+
+head(pdat21.2)
+dim(pdat21.2) #[1] 12298    18 #No missing values and w/o duplicates SiteID (median summarized)
+pdat22.2<-pdat21.2
+head(pdat22.2)
+dim(pdat22.2) #[1] 12298    18 #No missing values and w/o duplicates SiteID (median summarized); is a dataframe; Not matrix and not log transformed; need for pca
+pdat22.2_mat = as.matrix(log2(pdat22.2+1)) # without NAs; matrix and log transformed
+head(pdat22.2_mat) # without NAs; matrix and log transformed
+dim(pdat22.2_mat) #[1] 12298    18 # without NAs; matrix and log transformed
+
+#===============================================================================
+#If other cols except site id not already removed:
+
+#head(pdat16)
+#colnames(pdat16)
+#pdat17<-pdat16
+#dim(pdat17) #16155    28
+
+#pdat18 <- pdat17 %>%
+# relocate("SiteID", .before = "Accessions")
+#colnames(pdat18)
+#pdat19<-pdat18
+# colnames(pdat19)
+#dim(pdat19) #[1] 16155    28
+#pdat19<-pdat19[, -c(2,3,4,23,24,25,26,27,28)] # Remove all columns except siteid and values
+#colnames(pdat19)
+#dim(pdat19) #[1] 16155    19
+#head(pdat19)
+#pdat20<-pdat19
+#pdat20<-as.data.frame(pdat20)
+#head(pdat20)
+#rownames(pdat20) <- pdat20$SiteID #convert column value to row names
+#head(pdat20)
+#pdat21<-pdat20[, -c(1)] 
+#head(pdat21)
+#dim(pdat21) #[1] 16155    18
+
+#head(dat_comp1)  
+#head(dat_comp1)
+#dim(dat_comp1) #[1] 8334   18 after removing symbol # without NAs
+#dat_comp_mat1 = as.matrix(log2(dat_comp1)) # without NAs
+#head(dat_comp_mat1)
+
+#pdat22<-pdat21
+#head(pdat22)
+#dim(pdat22) #[1] 16155    18 #removed missing values and duplicates; is a dataframe; Not matrix and log transformed; need for pca
+#pdat22_mat = as.matrix(log2(pdat22)) # without NAs; matrix and log transformed
+#head(pdat22_mat) # without NAs; matrix and log transformed
+#dim(pdat22_mat) #[1] 16155    18 # without NAs; matrix and log transformed
+#===============================================================================================================================
+
+#==================================================================
 #density plot - plot is applied to log10 transformed data in code 
+#==================================================================
 
-head(pdata22)#not log transformed, not normalized, omitted NA
-dim(pdata22)#[1] 8334   18 without NAs_ not log, not normalized
-for (i in 1:ncol(pdata22)){
+head(pdat22.2)
+dim(pdat22.2) #[1] 12298    18 #No missing values and w/o duplicates SiteID (median summarized); is a dataframe; Not matrix and not log transformed; need for pca
+
+
+head(pdat22.2)#No missing values and w/o duplicate SiteID (median summarized); is a dataframe; Not matrix and not log transformed; not normalized; need for pca
+dim(pdat22.2)#[1] 8334   18 #No missing values and w/o duplicate SiteID (median summarized); is a dataframe; Not matrix and not log transformed; not normalized; need for pca
+for (i in 1:ncol(pdat22.2)){
   if (i==1){
-    plot(density(log10(pdata22[,1])),main="Density plot across phosphoproteomics study samples",xlab="Subjects",col="blue",ylim=c(0,0.8))}
+    plot(density(log10(pdat22.2[,1])),main="Density plot across phosphoproteomics study samples \n After median summarization of duplicates \n before log and matrix transformation",xlab="Subjects",col="blue",ylim=c(0,0.8))}
   else {
-    den <- density(log10(pdata22[,i]))
+    den <- density(log10(pdat22.2[,i]))
     lines(den$x,den$y,col="blue")}
 }
 
+#-------------------------------------------------------------------------------------------------
+#Normalization - Median and Quantile
+#-------------------------------------------------------------------------------------------------
+
 #Need to figure out normalization for phosphoproteomics data
 
-#-------------------------------------------------------------------------------
-#Median and quantile normalization and Quality Control Plots
-#-------------------------------------------------------------------------------
+#Other normalization techniques are used for TMT-labeled phosphoproteomics data?
+#Aside from median normalization, several other techniques are used to address 
+#systemic biases and batch effects in TMT-labeled phosphoproteomics data. 
+#These range from simple scaling to advanced statistical algorithms:
+#  1. Quantile Normalization - more aggressive technique that forces the 
+#distribution of intensities in each TMT channel to be identical. 
+
+#Best for: Highly heterogeneous samples where median centering 
+#alone may not align the data sufficiently.
+#Caution: It can sometimes "over-correct" and reduce biological variation if 
+#the underlying sample distributions are actually different due to experimental conditions. 
+
+#2. Internal Reference Scaling (IRS)
+#IRS is specifically designed for multi-plex TMT experiments where samples 
+#are spread across multiple TMT kits. 
+#It uses a common "bridge" sample (often a pool of all samples) included in every 
+#multiplexed set.
+#It corrects for the random MS2 sampling that occurs between different 
+#mass spectrometry runs, effectively removing batch effects. 
+
+#3. Total Peptide/Sum Normalization
+#This method scales each channel so that the total sum of reporter ion intensities 
+#is equal across all channels. 
+#Logic: It assumes that the total amount of peptide material should be the 
+#same in every channel.
+#Pros/Cons: It is simple to implement but, like mean normalization,
+#can be heavily influenced by a few extremely high-intensity peptides. 
+
+#2 and 3 = probably already done after ms maxquant software. 3 was definitely already done.
+
+#4. Variance Stabilizing Normalization (VSN)
+#VSN transforms the data to make the variance constant across the entire range of intensities. 
+#It uses a model that combines a linear transformation with a log-like transformation
+#to account for both additive and multiplicative noise. 
+
+#5. TAMPOR (Tukey’s Median Polish)
+#TAMPOR is an extension of median normalization that uses an iterative 
+#"median polish" algorithm. 
+#It is highly robust to outliers and is particularly effective at removing batch effects
+#while preserving biological signal in complex clinical datasets. 
+
+#6. Loading Normalization (SL-TMT "Label Check")
+#In "Streamlined TMT" (SL-TMT) workflows, a small aliquot of the labeled peptides 
+#is run as a "label check" before the final pooling. 
+#Process: Normalization factors are calculated from this preliminary run to adjust
+#the final mixing volumes of each channel, ensuring a 1:1 ratio before the actual
+#enrichment and deep-scale analysis. 
+
+# Here we will experiment with median and quantile normalization.
 
 #Log-transform first if your normalization method works better on log-scale (median, quantile).
 
-head(pdata22_mat) # without NAs; is matrix and log2 transformed
-dim(pdata22_mat) #[1] 16155    18 # without NAs; matrix and log2 transformed
+head(pdat22.2_mat) # without NAs; is matrix and log2 transformed
+dim(pdat22.2_mat) #[1] 12298    18 # without NAs; matrix and log2 transformed
 
-#=========================================================
-# boxplot: Before normalization
-#=========================================================
+#===================================================
+# Quality control-boxplot: Before normalization
+#===================================================
 
-# boxplot: intensities of all 16 channels after data preprocessing Before normalization
+# boxplot: intensities of all 16 channels after log transformation but Before normalization
 #http://127.0.0.1:40129/graphics/17b44cfd-ded5-4327-9e49-56e1f2f75d97.pngzation
 
 col <- c("red","red","red","blue","blue","blue","darkgreen","darkgreen","darkgreen","green","green","green","purple","purple","purple","orange","orange","orange")
@@ -543,17 +1313,22 @@ col
 fill <- c("red","blue","darkgreen","green","purple","orange")
 fill
 #par(mar = c(3, 3, 3, 10), mfrow=c(1,1), font.lab=2, cex.lab=1.2, font.axis=2, cex.axis=1.2, xpd = TRUE)
-boxplot(pdata22_mat, main="Boxplot Before Normalization",col=col)
+#boxplot(pdat22_mat, main="Boxplot Before Normalization and after filtering all duplicates",col=col)
+boxplot(pdat22.2_mat, main="Boxplot Before Normalization \n And after adding duplicates and log transformation",col=col)
+#boxplot(pdat22.3_mat, main="Boxplot Before Normalization and after median summarization of duplicates",col=col)
 #legend("right", title="Treatment",legend=c("GFP-0","GFP-10","OGTKD-605-0","OGTKD-605-10","OGTKD-606-0","OGTKD-606-10"), fill=fill, inset = c(-0.155,0))
 
-pdata23_mat<-pdata22_mat #For median normalization
-pdata24_mat<-pdata22_mat #For quantile normalization
-head(pdata23_mat) #[1] 16155    18 # without NAs; matrix and log transformed
-dim(pdata23_mat) #[1] 16155    18 # without NAs; matrix and log transformed
-head(pdata24_mat) #[1] 16155    18 # without NAs; matrix and log transformed
-dim(pdata24_mat) #[1] 16155    18 # without NAs; matrix and log transformed
+pdat23_mat<-pdat22.2_mat #For median normalization
+pdat24_mat<-pdat22.2_mat #For quantile normalization
+head(pdat23_mat) #[1] 12298    18 # without NAs; matrix and log transformed
+dim(pdat23_mat) #[1] 12298    18 # without NAs; matrix and log transformed
+head(pdat24_mat) #[1] 12298    18 # without NAs; matrix and log transformed
+dim(pdat24_mat) #[1] 12298    18 # without NAs; matrix and log transformed
 
-#Normalization using PhosR
+#================================================================================
+#Median Normalization using PhosR And quantile normalization Using Limma
+#================================================================================
+
 #if (!requireNamespace("BiocManager", quietly = TRUE))
  # install.packages("BiocManager")
 
@@ -562,182 +1337,171 @@ dim(pdata24_mat) #[1] 16155    18 # without NAs; matrix and log transformed
 
 library(PhosR)
 
-#-------------------------------------------------------------------------------
-# Median Normalization
-#-------------------------------------------------------------------------------
-
-#Normalize using global median scaling
+# Normalize TMT channels using global median scaling
 #Median centering and scaling in PhosR
-pdata23_mat_norm <- PhosR::medianScaling(pdata23_mat) #Median normalization
+pdat23_mat_norm <- PhosR::medianScaling(pdat23_mat) #Median normalization
 
-#=========================================================
-# boxplot: After normalization using global median scaling
-#=========================================================
-
-#http://127.0.0.1:40129/graphics/17b44cfd-ded5-4327-9e49-56e1f2f75d97.pngzation
-
-col <- c("red","red","red","blue","blue","blue","darkgreen","darkgreen","darkgreen","green","green","green","purple","purple","purple","orange","orange","orange")
-col
-fill <- c("red","blue","darkgreen","green","purple","orange")
-fill
-#par(mar = c(3, 3, 3, 10), mfrow=c(1,1), font.lab=2, cex.lab=1.2, font.axis=2, cex.axis=1.2, xpd = TRUE)
-boxplot(pdata23_mat_norm, main="Boxplot normalized intensities using global median scaling",col=col)
-#legend("right", title="Treatment",legend=c("GFP-0","GFP-10","OGTKD-605-0","OGTKD-605-10","OGTKD-606-0","OGTKD-606-10"), fill=fill, inset = c(-
-
-#http://127.0.0.1:40129/graphics/17b44cfd-ded5-4327-9e49-56e1f2f75d97.pngzation
-
-#-------------------------------------------------------------------------------
 #Quantile normalization
-#-------------------------------------------------------------------------------
+pdat24_mat_norm <- limma::normalizeQuantiles(pdat24_mat) #Quantile normalization
 
-pdata24_mat_norm <- limma::normalizeQuantiles(pdata24_mat) #Quantile normalization
 
-#dat_comp_mat_quant1 = limma::normalizeQuantiles(dat_comp_mat1) # without NAs, log
+#================================================================================
+# Quality control-boxplots: After median And quantile normalization
+#================================================================================
+
+#median normalization
+#boxplot(pdat23_mat_norm, main="Boxplot normalized intensities using global median scaling\n sumarized deduplicates",col=col)
+boxplot(pdat23_mat_norm, main="Boxplot Normalized Intensities - Median Normalization",col=col)
+
+#quantile normalization
+#boxplot(pdat24_mat_norm, main="Boxplot normalized intensities - Quantile Normalization \n median summarized all dupliates",col=col)
+boxplot(pdat24_mat_norm, main="Boxplot Normalized Intensities - Quantile Normalization",col=col)
+
+#before normalization
+#boxplot(pdat22.2_mat, main="Boxplot Before Normalization and after median summarization of duplicates",col=col)
+boxplot(pdat22.2_mat, main="Boxplot Before Normalization \n And after adding duplicates and log transformation",col=col)
 
 #Integration: Even if you use Median for phospho and Quantile for total, the data 
 #will still integrate well as long as both are Log2 transformed. 
 #The Log2 scale is the most critical "common language" between the two datasets.
 
-#=========================================================
-# boxplot: After Quantile normalization 
-#=========================================================
+head(pdat23_mat_norm) #Median normalization, matrix, log2 transformed, removed missing values and duplicates
+dim(pdat23_mat_norm)
 
-col <- c("red","red","red","blue","blue","blue","darkgreen","darkgreen","darkgreen","green","green","green","purple","purple","purple","orange","orange","orange")
-col
-fill <- c("red","blue","darkgreen","green","purple","orange")
-fill
-#par(mar = c(3, 3, 3, 10), mfrow=c(1,1), font.lab=2, cex.lab=1.2, font.axis=2, cex.axis=1.2, xpd = TRUE)
-boxplot(pdata24_mat_norm, main="Boxplot normalized intensities - quantile normalization",col=col)
-#legend("right", title="Treatment",legend=c("GFP-0","GFP-10","OGTKD-605-0","OGTKD-605-10","OGTKD-606-0","OGTKD-606-10"), fill=fill, inset = c(-
+head(pdat24_mat_norm) #Quantile normalization, matrix, log2 transformed, removed missing values and duplicates
+dim(pdat24_mat_norm)
 
-head(pdata23_mat_norm) #Median normalization, matrix, log2 transformed, removed missing values and duplicates
-dim(pdata23_mat_norm)
-
-head(pdata24_mat_norm) #Quantile normalization, matrix, log2 transformed, removed missing values and duplicates
-dim(pdata24_mat_norm)
-
-colnames(pdata24_mat_norm)
-table(apply(pdata24_mat_norm, 1, function(x) sum(is.na(x))))
+colnames(pdat24_mat_norm)
+table(apply(pdat24_mat_norm, 1, function(x) sum(is.na(x))))
 
 # 0 
-#16155 
+#12298  
 
-colnames(pdata23_mat_norm)
-table(apply(pdata23_mat_norm, 1, function(x) sum(is.na(x))))
+colnames(pdat23_mat_norm)
+table(apply(pdat23_mat_norm, 1, function(x) sum(is.na(x))))
 # 0 
-#16155 
+#12298  
 
 #So confirmed no missing values
 
-#-------------------------------------------------------------------------------
-#Density plots for normalized and log2 transformed data
-#-------------------------------------------------------------------------------
+#==============#
+#Density plots
+#==============#
 
-#pdata22 = not log transformed, not normalized, omitted NA
-for (i in 1:ncol(pdata22)){
+head(pdat22.2)#No missing values and w/o duplicate SiteID (median summarized); is a dataframe; Not matrix and not log transformed; not normalized; need for pca
+dim(pdat22.2)#[1] 12298   18 #No missing values and w/o duplicate SiteID (median summarized); is a dataframe; Not matrix and not log transformed; not normalized; need for pca
+
+#pdat22.2 = not log transformed, not normalized, omitted NA
+for (i in 1:ncol(pdat22.2)){
   if (i==1){
-    plot(density(log10(pdata22[,1])),main="Density plot - Phosphoproteomics \n Not log transformed, not normalized, omitted NA", xlab="Subjects",col="blue",ylim=c(0,0.8))}
+    plot(density(log10(pdat22.2[,1])),main="Density plot - Phosphoproteomics \n Not log transformed, not normalized, omitted NA", xlab="Subjects",col="blue",ylim=c(0,0.8))}
   else {
-    den <- density(log10(pdata22[,i]))
+    den <- density(log10(pdat22.2[,i]))
     lines(den$x,den$y,col="blue")}
-}
+} 
 
-#pdata23_mat_norm = Median normalization, matrix, log2 transformed, removed missing values and duplicates
-for (i in 1:ncol(pdata23_mat_norm)){
+#Already saved image
+
+#pdat23_mat_norm = Median normalization, matrix, log2 transformed, removed missing values and duplicates
+for (i in 1:ncol(pdat23_mat_norm)){
   if (i==1){
-    plot(density((pdata23_mat_norm[,1])),main="Density plot - Phosphoproteomics \n Median normalized, log2 transformed, Omitted NAs",xlab="Subjects",col="blue",ylim=c(0,0.8))}
+    plot(density((pdat23_mat_norm[,1])),main="Density plot - Phosphoproteomics \n Median normalized, log2 transformed, Removed missing values and duplicates",xlab="Subjects",col="blue",ylim=c(0,0.8))}
   else {
-    den <- density((pdata23_mat_norm[,i]))
-    lines(den$x,den$y,col="blue")}
-}
-
-
-#pdata24_mat_norm = Quantile normalization, matrix, log2 transformed, removed missing values and duplicates
-
-for (i in 1:ncol(pdata24_mat_norm)){
-  if (i==1){
-    plot(density((pdata24_mat_norm[,1])),main="Density plot - Phosphoproteomics \n Quantile normalized, Blue colored, log2 transformed, Omitted NAs",xlab="Subjects",col="blue",ylim=c(0,0.8))}
-  else {
-    den <- density((pdata24_mat_norm[,i]))
+    den <- density((pdat23_mat_norm[,i]))
     lines(den$x,den$y,col="blue")}
 }
 
 
-#To be 100% sure that all samples are actually being plotted and 
-#it's not just the first one, can temporarily change the color in loop 
+#pdat24_mat_norm = Quantile normalization, matrix, log2 transformed, removed missing values and duplicates
+
+for (i in 1:ncol(pdat24_mat_norm)){
+  if (i==1){
+    plot(density((pdat24_mat_norm[,1])),main="Density plot - Phosphoproteomics \n Quantile normalized, Blue colored, log2 transformed, Removed missing values and duplicates",xlab="Subjects",col="blue",ylim=c(0,0.8))}
+  else {
+    den <- density((pdat24_mat_norm[,i]))
+    lines(den$x,den$y,col="blue")}
+}
+
+
+#If you want to be 100% sure that all samples are actually being plotted and 
+#it's not just the first one, you can temporarily change the color in your loop 
 #to use a palette:
 
-for (i in 1:ncol(pdata24_mat_norm)){
+for (i in 1:ncol(pdat24_mat_norm)){
   if (i==1){
-    plot(density((pdata24_mat_norm[,1])),main="Density plot - Phosphoproteomics \n Quantile normalized, Palette colored, log2 transformed, Omitted NAs",xlab="Subjects",col="blue",ylim=c(0,0.8))}
+    plot(density((pdat24_mat_norm[,1])),main="Density plot - Phosphoproteomics \n Quantile normalized, Palette colored, log2 transformed, Removed missing values and duplicates",xlab="Subjects",col="blue",ylim=c(0,0.8))}
   else {
-    den <- density((pdata24_mat_norm[,i]))
-    lines(den$x,den$y,col= rainbow(ncol(pdata24_mat_norm))[i])}
+    den <- density((pdat24_mat_norm[,i]))
+    lines(den$x,den$y,col= rainbow(ncol(pdat24_mat_norm))[i])}
 }
 
 #The "Single Line" Effect: This confirms your normalization worked. In raw data, you would see 10–16 different blue "humps" slightly shifted from one another. Now, they are unified.
 
-#Not possible to do log 10 becaue pdata23_mat_norm Is already log 2 transformed
 
-#for (i in 1:ncol(pdata23_mat_norm)){
+
+
+#Not possible to do log 10 becaue pdat23_mat_norm Is already log 2 transformed
+
+#for (i in 1:ncol(pdat23_mat_norm)){
   #if (i==1){
-   # plot(density(log10(pdata23_mat_norm[,1])),main="Density plot across phosphoproteomics study samples",xlab="Subjects",col="blue",ylim=c(0,0.8))}
+   # plot(density(log10(pdat23_mat_norm[,1])),main="Density plot across phosphoproteomics study samples",xlab="Subjects",col="blue",ylim=c(0,0.8))}
 #  else {
- #   den <- density(log10(pdata23_mat_norm[,i]))
+ #   den <- density(log10(pdat23_mat_norm[,i]))
   #  lines(den$x,den$y,col="blue")}
 # }
 
-#-------------------------------------------------------------------------------
+#========================================================
 #MDS - Multi-dimensional scaling plot - similar to PCA
-#-------------------------------------------------------------------------------
+#========================================================
 
-head(pdata22) #removed missing values and duplicates; is a dataframe; Not matrix, not normalized and log transformed; need for pca
-dim(pdata22) #[1] 16155    18 #removed missing values and duplicates; is a dataframe; Not matrix, not normalized and log transformed; need for pca
-table(apply(pdata22, 1, function(x) sum(is.na(x))))
+head(pdat22.2) #No missing values and w/o duplicates SiteID (median summarized); is a dataframe; Not matrix and not log transformed; need for pca
+dim(pdat22.2) #[1] 12298    18 #No missing values and w/o duplicates SiteID (median summarized); is a dataframe; Not matrix and not log transformed; need for pca
+table(apply(pdat22.2, 1, function(x) sum(is.na(x))))
 #0 
-#16155 
+#12298  
 
-labels<-colnames(pdata22)
+labels<-colnames(pdat22.2)
 labels
 library(ggplot2)
 col <- c("red","red","red","blue","blue","blue","darkgreen","darkgreen","darkgreen","green","green","green","purple","purple","purple","orange","orange","orange")
 col
 #https://support.bioconductor.org/p/100859/
-plotMDS(pdata22, main="Multipledimensional scaling plot (MDS)",col=col)
+plotMDS(pdat22.2, main="Multipledimensional Scaling Plot (MDS) - Before Log Transformation and Normalization",col=col)
 
-# pdata23_mat_norm = Median normalized
+# pdat23_mat_norm = Median normalized
 
 #head(dea$tt) #values after comparisons with contrast matrix
-head(pdata23_mat_norm) #normailzed and filtered values - use this for mds plot
-dim(pdata23_mat_norm) #[1] 16155   18 #removed NA, without Symbol, median norm, log 2
-labels<-colnames(pdata23_mat_norm)
+head(pdat23_mat_norm) #normailzed and filtered values - use this for mds plot
+dim(pdat23_mat_norm) #[1] 12298  18 #removed NA, without Symbol, median norm, log 2
+labels<-colnames(pdat23_mat_norm)
 labels
 library(ggplot2)
 col <- c("red","red","red","blue","blue","blue","darkgreen","darkgreen","darkgreen","green","green","green","purple","purple","purple","orange","orange","orange")
 col
 #https://support.bioconductor.org/p/100859/
-plotMDS(pdata23_mat_norm, main="Multipledimensional scaling plot (MDS)\n Median normalized dataset",col=col)
+plotMDS(pdat23_mat_norm, main="Multipledimensional scaling plot (MDS)\n Median normalized dataset",col=col)
 
-# pdata24_mat_norm = Quantile normalized
+# pdat24_mat_norm = Quantile normalized
 
 #head(dea$tt) #values after comparisons with contrast matrix
-head(pdata24_mat_norm) #normailzed and filtered values - use this for mds plot
-dim(pdata24_mat_norm) #[1] 16155   18 #removed NA, without Symbol, quantile norm, log 2
-labels<-colnames(pdata24_mat_norm)
+head(pdat24_mat_norm) #normailzed and filtered values - use this for mds plot
+dim(pdat24_mat_norm) #[1] 16155   18 #removed NA, without Symbol, quantile norm, log 2
+labels<-colnames(pdat24_mat_norm)
 labels
 library(ggplot2)
 col <- c("red","red","red","blue","blue","blue","darkgreen","darkgreen","darkgreen","green","green","green","purple","purple","purple","orange","orange","orange")
 col
 #https://support.bioconductor.org/p/100859/
-plotMDS(pdata24_mat_norm, main="Multipledimensional scaling plot (MDS)\n Quantile normalized dataset",col=col)
+plotMDS(pdat24_mat_norm, main="Multipledimensional scaling plot (MDS)\n Quantile normalized dataset",col=col)
 
 
 #https://combine-australia.github.io/RNAseq-R/06-rnaseq-day1.html
 
-#-------------------------------------------------------------------------------
-# PCA - Principal Component Analysis - After removing missing values (NA) and 
-#duplicates but before log2 transformation and normalization
-#-------------------------------------------------------------------------------
+######################################################################################
+
+#=======================================
+# PCA - Principal Component Analysis
+#=======================================
 
 get_pca2 <- function(dat, labels, legend_title = 'Treatment') {
   require(ggplot2)
@@ -756,61 +1520,28 @@ get_pca2 <- function(dat, labels, legend_title = 'Treatment') {
   return(list(p = p , summ = summary(pca_res)))
 } # end get_pca
 
-head(pdata22) #removed missing values and duplicates; is a dataframe; Not matrix, not normalized and log transformed; need for pca
-dim(pdata22) #[1] 16155    18 #removed missing values and duplicates; is a dataframe; Not matrix, not normalized and log transformed; need for pca
-table(apply(pdata22, 1, function(x) sum(is.na(x))))
+head(pdat22.2) #No missing values and w/o duplicates SiteID (median summarized); is a dataframe; Not matrix and not log transformed; need for pca
+dim(pdat22.2) #[1] 12298    18 #No missing values and w/o duplicates SiteID (median summarized); is a dataframe; Not matrix and not log transformed; need for pca
+table(apply(pdat22.2, 1, function(x) sum(is.na(x))))
 #0 
-#16155 
+#12298  
 
 labels<-c("GFP-0","GFP-0","GFP-0","GFP-10","GFP-10","GFP-10","OGTKD-605-0","OGTKD-605-0","OGTKD-605-0","OGTKD-605-10","OGTKD-605-10","OGTKD-605-10","OGTKD-606-0","OGTKD-606-0","OGTKD-606-0","OGTKD-606-10","OGTKD-606-10","OGTKD-606-10")
 labels
 #head(dat1)
-PCA<-get_pca2(pdata22,labels)
+PCA<-get_pca2(pdat22.2,labels)
 PCA$p
 #https://stackoverflow.com/questions/33640492/change-point-colors-and-color-of-frame-ellipse-around-points
 #https://www.geeksforgeeks.org/how-to-change-position-of-ggplot-title-in-r/
 
-any(is.infinite(as.matrix(pdata22)))
+any(is.infinite(as.matrix(pdat22.2)))
 
 #---------------------------------------------------------------------------------------------
 #PCA - After Median normalization and log2 transformation
 #-------------------------------------------------------------------------------------------------
 
-any(is.infinite(as.matrix(pdata23_mat_norm)))
-which(is.infinite(as.matrix(pdata23_mat_norm)), arr.ind = TRUE)
-#In your phosphoproteomics data, these infinite values (-Inf) are the result of
-#a mathematical operation: log2(0)
-#So we need to remove these!
-
-pdata23.2_mat_norm<-pdata23_mat_norm
-head(pdata23.2_mat_norm)
-dim(pdata23.2_mat_norm)
-dim(pdata22)
-any(is.infinite(as.matrix(pdata23.2_mat_norm)))
-which(is.infinite(as.matrix(pdata23.2_mat_norm)), arr.ind = TRUE)
-#Filter infinite values
-#pdata23_clean <- pdata23.2_mat_norm[rowSums(is.infinite(as.matrix(pdata23.2_mat_norm))) == 0, ]
-#Or Imput to a miniimum value
-
-# 1. Identify the 'noise floor'
-# We find the lowest finite value in our data and take a slightly smaller value
-min_val <- min(pdata23.2_mat_norm[is.finite(as.matrix(pdata23.2_mat_norm))], na.rm = TRUE)
-
-# 2. Create a copy of your matrix to keep the original safe
-pdata23_imputed <- pdata23.2_mat_norm
-
-# 3. Replace -Inf (and NA) with that minimum value
-# (Optional: Subtract 1 from the min_val to push it even further into the 'noise')
-pdata23_imputed[is.infinite(as.matrix(pdata23_imputed)) | is.na(as.matrix(pdata23_imputed))] <- min_val
-
-# 4. Final safety check: remove rows that have zero variance 
-# (In case a row was ALL -Inf, it will now be a constant value)
-pdata23_imputed <- pdata23_imputed[apply(pdata23_imputed, 1, var) > 0, ]
-
-head(pdata23_imputed)
-dim(pdata23_imputed) # 12262    18 # after removing infinite values
-
-# PCA - Principal Component Analysis
+head(pdat23_mat_norm) #normailzed and filtered values - use this for mds plot
+dim(pdat23_mat_norm) #[1] 12298   18 #removed NA, without Symbol, median norm, log 2
 
 get_pca3 <- function(dat, labels, legend_title = 'Treatment') {
   require(ggplot2)
@@ -822,123 +1553,36 @@ get_pca3 <- function(dat, labels, legend_title = 'Treatment') {
   p <- ggplot(data = U, aes(x = PC1, y = PC2, color = labels )) +
     geom_point(size = 3, alpha = 0.5) + 
     theme_bw() +
-    labs(color = legend_title, title="Principal Component Analysis (PCA) \n After Median normalization, log2 transformation and Imputing infinite values from log2 transformation" )+
+    labs(color = legend_title, title="Principal Component Analysis (PCA) \n After removing missing values (NA) and duplicates, log2 transformation and Median normalization" )+
     scale_color_manual(values = c("red","blue","darkgreen","green","purple","orange"))+
     theme(plot.title = element_text(hjust=0.5))
   
   return(list(p = p , summ = summary(pca_res)))
 } # end get_pca
 
+head(pdat23_mat_norm) #No missing values and w/o duplicates SiteID (median summarized); is a dataframe; Not matrix and not log transformed; need for pca
+dim(pdat23_mat_norm) #[1] 12298    18 #No missing values and w/o duplicates SiteID (median summarized); is a dataframe; Not matrix and not log transformed; need for pca
+table(apply(pdat23_mat_norm, 1, function(x) sum(is.na(x))))
+#0 
+#12298  
 
 labels<-c("GFP-0","GFP-0","GFP-0","GFP-10","GFP-10","GFP-10","OGTKD-605-0","OGTKD-605-0","OGTKD-605-0","OGTKD-605-10","OGTKD-605-10","OGTKD-605-10","OGTKD-606-0","OGTKD-606-0","OGTKD-606-0","OGTKD-606-10","OGTKD-606-10","OGTKD-606-10")
 labels
-PCA<-get_pca3(pdata23_imputed,labels)
+#head(dat1)
+PCA<-get_pca3(pdat23_mat_norm,labels)
 PCA$p
+#https://stackoverflow.com/questions/33640492/change-point-colors-and-color-of-frame-ellipse-around-points
+#https://www.geeksforgeeks.org/how-to-change-position-of-ggplot-title-in-r/
 
-#========================================================================================
-# Bar Plot to see missing values After imputing infinite values from log2 transformation
-#========================================================================================
-
-dim(pdata23_imputed) #12262    18
-library(ggplot2)
-library(scales)
-# Create the data frame with your numbers
-attrition_data2 <- data.frame(
-  Step = factor(c("1. Raw Peptides", "2. Missing Value Filter", "3. Unique Site IDs\n following de-duplication", "4. After imputing infinite values \n following log2 transformation"),
-                levels = c("1. Raw Peptides", "2. Missing Value Filter", "3. Unique Site IDs\n following de-duplication", "4. After imputing infinite values \n following log2 transformation")),
-  Count = c(32559, 24914, 16155, 12262)
-)
-# Levels = This is the exact order I want these categories displayed
-
-#view(attrition_data)
-# Plot the Bar Chart
-ggplot(attrition_data2, aes(x = Step, y = Count, fill = Step)) + 
-  #aes(fill = Step) - Color depends on data, Creates different colors for categories
-  
-  geom_bar(stat = "identity", width = 0.6, show.legend = FALSE) + 
-  #geom_bar() creates a bar plot in ggplot2
-  #stat = "identity" is a statistical transformation that tells R to use 
-  #the exact values provided in the data frame without performing any additional 
-  #calculations, such as counting or binning
-  
-  geom_text(aes(label = comma(Count)), vjust = -0.5, size = 5, fontface = "bold") +
-  #label = comma(Count) is used to format numeric labels (like counts or totals) 
-  #by adding thousands-separator commas (e.g., changing 1000000 to 1,000,000) 
-  #for better readability.
-  
-  scale_fill_brewer(palette = "Greens") +
-  #This above line controls the color palette used for the fill aesthetic in ggplot2.
-  
-  labs(title = "Phosphoproteomics Peptide Attrition Summary - Bar Plot - Median Normalized Data",
-       subtitle = "Data reduction from raw phosphopeptide identification to imputing infinite values from log2 transformation of median normalized data",
-       x = "Processing Stage",
-       y = "Number of Peptides") +
-  
-  theme_minimal() +
-  theme(axis.text.x = element_text(size = 12),
-        plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
-        plot.subtitle = element_text(hjust = 0.5, size = 12)
-  ) #theme= Adjust default theme to what's needed
+any(is.infinite(as.matrix(pdat23_mat_norm)))
 
 
 #---------------------------------------------------------------------------------------------
 #PCA - After Quantile normalization and log2 transformation
 #-------------------------------------------------------------------------------------------------
 
-any(is.infinite(as.matrix(pdata24_mat_norm)))
-which(is.infinite(as.matrix(pdata24_mat_norm)), arr.ind = TRUE)
-#In your phosphoproteomics data, these infinite values (-Inf) are the result of
-#a mathematical operation: log2(0)
-#So we need to remove these!
-
-pdata24.2_mat_norm<-pdata24_mat_norm
-head(pdata24.2_mat_norm)
-dim(pdata24.2_mat_norm)
-#dim(pdata22)
-any(is.infinite(as.matrix(pdata24.2_mat_norm)))
-which(is.infinite(as.matrix(pdata24.2_mat_norm)), arr.ind = TRUE)
-#Filter infinite values
-#pdata24_clean <- pdata24.2_mat_norm[rowSums(is.infinite(as.matrix(pdata24.2_mat_norm))) == 0, ]
-#Or Imput to a miniimum value
-
-# 1. Identify the 'noise floor'
-# We find the lowest finite value in our data and take a slightly smaller value
-min_val2 <- min(pdata24.2_mat_norm[is.finite(as.matrix(pdata24.2_mat_norm))], na.rm = TRUE)
-
-#is.finite(...): Identifies values that are neither missing (NA) nor infinite (Inf or -Inf).
-#matrix - so it can be evaluated as a single collection of values rather than column-by-column
-#pdata24.2_mat_norm[...]: Subsets the original data to keep only those finite values
-#na.rm = TRUE is an argument used in many functions to ignore missing values (NA) NA Remove
-#min(..., na.rm = TRUE): Finds the smallest remaining value
-
-# 2. Create a copy of your matrix to keep the original safe
-pdata24_imputed <- pdata24.2_mat_norm
-
-# 3. Replace -Inf (and NA) with that minimum value
-# (Optional: Subtract 1 from the min_val to push it even further into the 'noise')
-pdata24_imputed[is.infinite(as.matrix(pdata24_imputed)) | is.na(as.matrix(pdata24_imputed))] <- min_val2
-
-# OR | This is the OR operator. It combines the two checks, identifying any cell that 
-#is either infinite or missing.
-#<- min_val2: Assigns the previously found minimum value to all those "bad" cells.
-
-
-# 4. Final safety check: remove rows that have zero variance 
-# (In case a row was ALL -Inf, it will now be a constant value)
-pdata24_imputed <- pdata24_imputed[apply(pdata24_imputed, 1, var) > 0, ]
-
-#1 tells R to look at rows (if it were 2, it would look at columns).
-#The var calculates the variance for each row.
-#If all numbers in a row are identical (e.g., 5, 5, 5), the variance is 0.
-#> 0: Creates a logical test. It returns TRUE for rows that have at least some 
-#> variation and FALSE for rows where the values are all identical.
-#pdata24_imputed[..., ]: This uses that TRUE/FALSE list to subset the data. 
-#It keeps only the rows that passed the test (variance > 0).
-
-head(pdata24_imputed)
-dim(pdata24_imputed) # 12262    18 # after removing infinite values
-
-# PCA - Principal Component Analysis
+head(pdat24_mat_norm) #normailzed and filtered values - use this for mds plot
+dim(pdat24_mat_norm) #[1] 12298   18 #removed NA, without Symbol, quantile norm, log 2
 
 get_pca4 <- function(dat, labels, legend_title = 'Treatment') {
   require(ggplot2)
@@ -950,62 +1594,2316 @@ get_pca4 <- function(dat, labels, legend_title = 'Treatment') {
   p <- ggplot(data = U, aes(x = PC1, y = PC2, color = labels )) +
     geom_point(size = 3, alpha = 0.5) + 
     theme_bw() +
-    labs(color = legend_title, title="Principal Component Analysis (PCA) \n After Quantile normalization, log2 transformation and Imputing infinite values from log2 transformation" )+
+    labs(color = legend_title, title="Principal Component Analysis (PCA) \n After removing missing values (NA) and duplicates, log2 transformation and Quantile normalization" )+
     scale_color_manual(values = c("red","blue","darkgreen","green","purple","orange"))+
     theme(plot.title = element_text(hjust=0.5))
   
   return(list(p = p , summ = summary(pca_res)))
 } # end get_pca
 
+head(pdat24_mat_norm) #No missing values and w/o duplicates SiteID (median summarized); is a dataframe; matrix and log transformed; quantile normalized; need for pca
+dim(pdat24_mat_norm) #[1] 12298    18 #No missing values and w/o duplicates SiteID (median summarized); is a dataframe; matrix and log transformed;  quantile normalized; need for pca
+table(apply(pdat24_mat_norm, 1, function(x) sum(is.na(x))))
+#0 
+#12298  
 
 labels<-c("GFP-0","GFP-0","GFP-0","GFP-10","GFP-10","GFP-10","OGTKD-605-0","OGTKD-605-0","OGTKD-605-0","OGTKD-605-10","OGTKD-605-10","OGTKD-605-10","OGTKD-606-0","OGTKD-606-0","OGTKD-606-0","OGTKD-606-10","OGTKD-606-10","OGTKD-606-10")
 labels
-PCA<-get_pca4(pdata24_imputed,labels)
+#head(dat1)
+PCA<-get_pca4(pdat24_mat_norm,labels)
 PCA$p
+#https://stackoverflow.com/questions/33640492/change-point-colors-and-color-of-frame-ellipse-around-points
+#https://www.geeksforgeeks.org/how-to-change-position-of-ggplot-title-in-r/
 
-#========================================================================================
-# Bar Plot to see missing values After imputing infinite values from log2 transformation
-#========================================================================================
+any(is.infinite(as.matrix(pdat24_mat_norm)))
 
-dim(pdata24_imputed) #12262    18
-library(ggplot2)
-library(scales)
-# Create the data frame with your numbers
-attrition_data2 <- data.frame(
-  Step = factor(c("1. Raw Peptides", "2. Missing Value Filter", "3. Unique Site IDs\n following de-duplication", "4. After imputing infinite values \n following log2 transformation"),
-                levels = c("1. Raw Peptides", "2. Missing Value Filter", "3. Unique Site IDs\n following de-duplication", "4. After imputing infinite values \n following log2 transformation")),
-  Count = c(32559, 24914, 16155, 12262)
+#####################################################################################
+#=====================================#
+#Normalization with total proteome
+#=====================================#
+head(pdat23_mat_norm) #median normailzed and filtered values - use this for mds plot
+dim(pdat23_mat_norm) #[1] 12298   18 #removed NA, without Symbol, median norm, log 2
+type(pdat23_mat_norm)
+pprot<-pdat23_mat_norm
+head(pprot) #median normailzed and filtered values - use this for mds plot
+dim(pprot) #[1] 12298   18 #removed NA, without Symbol, median norm, log 2
+type(pprot)
+
+head(Normalize)
+type(Normalize)
+totalprot<-as.data.frame(Normalize)
+head(totalprot) #median normailzed and filtered values - use this for mds plot
+dim(totalprot) #[1] 9199   18 #removed NA, without Symbol, median norm, log 2
+type(totalprot)
+
+colnames(totalprot)
+colnames(totalprot) <- colnames(pprot)
+colnames(totalprot)
+head(totalprot)
+dim(totalprot)
+type(totalprot)
+
+head(pprot) #median normailzed and filtered values - use this for mds plot
+head(totalprot) #median normailzed and filtered values - use this for mds plot
+
+dim(pprot) #[1] 12298   18 #removed NA, without Symbol, median norm, log 2
+dim(totalprot) #[1] 9199   18 #removed NA, without Symbol, median norm, log 2
+
+type(pprot)
+type(totalprot)
+
+# 1. Converting row names to a column to extract the Protein Accession
+pprot_df <- as.data.frame(pprot)
+pprot_df$SiteID <- rownames(pprot_df)
+pprot_df$Accession <- sub("_.*", "", pprot_df$SiteID) # Extracts everything before the "_"
+head(pprot_df)
+
+# 2. Geting common proteins and columns
+common_prots <- intersect(pprot_df$Accession, rownames(totalprot))
+common_cols <- intersect(colnames(pprot), colnames(totalprot))
+head(common_prots)
+length(common_prots)
+#2,923 proteins in common
+head(common_cols)
+length(common_cols)
+
+# 3. Filtering pprot to only those that have matching total protein data
+pprot_filtered <- pprot_df[pprot_df$Accession %in% common_prots, ]
+head(pprot_filtered)
+dim(pprot_filtered)
+#[1] 9358   20
+dim(pprot_df)
+#[1] 12298    20
+
+#4. Saving the missing IDs
+missing_prots <- setdiff(pprot_df$Accession, rownames(totalprot))
+length(missing_prots) # Number of proteins missing in total proteome #[1] 1484 missing
+head(missing_prots)   # See the first few IDs
+pprot_missing <- pprot_df[pprot_df$Accession %in% missing_prots, ]
+head(pprot_missing)
+dim(pprot_missing)
+#[1] 2940   20
+dim(pprot_filtered)
+#[1] 9358   20
+9358+2940
+12298-9358
+
+# 5. Performing the subtraction (because log transformed values)
+# We use a loop or a vectorized approach to subtract the total protein row from the phospho row
+pprot_norm <- pprot_filtered
+head(pprot_norm)
+dim(pprot_norm)
+head(totalprot)
+head(common_cols)
+
+for (i in 1:nrow(pprot_norm)) {
+  acc <- pprot_norm$Accession[i]
+  # Normalized = Log2(Phospho) - Log2(Total)
+  pprot_norm[i, common_cols] <- pprot_norm[i, common_cols] - totalprot[acc, common_cols]
+}
+
+head(pprot_norm)
+dim(pprot_norm)
+#9358  20
+
+# 6. Finalizing the matrix
+rownames(pprot_norm) <- pprot_norm$SiteID
+head(pprot_norm)
+dim(pprot_norm)
+#9358  20
+pprot_normalized_final <- as.matrix(pprot_norm[, common_cols])
+
+# 7. Checking the first few rows
+head(pprot_normalized_final)
+dim(pprot_normalized_final)
+#[1] 9358   18
+
+# 8. Preparing the missing data matrix (only intensity columns)
+head(pprot_missing)
+dim(pprot_missing)
+pprot_missing_final <- as.matrix(pprot_missing[, common_cols])
+head(pprot_missing_final)
+dim(pprot_missing_final)
+
+# 9. Stacking them together (9,358 + 2,940 = 12,298)
+pprot_full_analysis <- rbind(pprot_normalized_final, pprot_missing_final)
+
+# 10. Checking the final dimensions
+head(pprot_full_analysis)
+dim(pprot_full_analysis) 
+# Should be [1] 12298 18
+
+#11.  Adding the "Normalized" flag to the results for later
+# This is crucial so you don't over-interpret the missing sites
+is_normalized <- rownames(pprot_full_analysis) %in% rownames(pprot_normalized_final)
+head(is_normalized)
+length(is_normalized)
+
+#12. Creating the metadata table
+feature_info <- data.frame(
+  SiteID = rownames(pprot_full_analysis),
+  IsNormalized = rownames(pprot_full_analysis) %in% rownames(pprot_normalized_final)
 )
-# Levels = This is the exact order I want these categories displayed
+head(feature_info)
+dim(feature_info)
+# Verify they match perfectly
+all(rownames(pprot_full_analysis) == feature_info$SiteID)
 
-#view(attrition_data)
-# Plot the Bar Chart
-ggplot(attrition_data2, aes(x = Step, y = Count, fill = Step)) + 
-  #aes(fill = Step) - Color depends on data, Creates different colors for categories
-  
-  geom_bar(stat = "identity", width = 0.6, show.legend = FALSE) + 
-  #geom_bar() creates a bar plot in ggplot2
-  #stat = "identity" is a statistical transformation that tells R to use 
-  #the exact values provided in the data frame without performing any additional 
-  #calculations, such as counting or binning
-  
-  geom_text(aes(label = comma(Count)), vjust = -0.5, size = 5, fontface = "bold") +
-  #label = comma(Count) is used to format numeric labels (like counts or totals) 
-  #by adding thousands-separator commas (e.g., changing 1000000 to 1,000,000) 
-  #for better readability.
-  
-  scale_fill_brewer(palette = "Blues") +
-  #This above line controls the color palette used for the fill aesthetic in ggplot2.
-  
-  labs(title = "Phosphoproteomics Peptide Attrition Summary - Bar Plot - Quantile Normalized Data",
-       subtitle = "Data reduction from raw phosphopeptide identification to imputing infinite values from log2 transformation of Quantile normalized data",
-       x = "Processing Stage",
-       y = "Number of Peptides") +
-  
-  theme_minimal() +
-  theme(axis.text.x = element_text(size = 12),
-        plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
-        plot.subtitle = element_text(hjust = 0.5, size = 12)
-  ) #theme= Adjust default theme to what's needed
+#========================================================================================================#
+#=======================================#
+# Differential expression analysis
+#=======================================#
 
+#using limma-trend - # This assumes uniform and normal distribution of data 
+#(seen in density plot)
+
+#When the library sizes are quite variable between samples, then the voom approach 
+#is theoretically more powerful than limma-trend. 
+
+#Library size could mean one of two things: the total number of reads that were sequenced 
+#in the run or the total number of mapped reads
+
+#Read = sequenced fragment of cDNA (obtained from RNA) here ptn
+
+#Why Limma-Trend for Phosphoproteomics?
+#Borrowing Information: Limma borrows information across all peptides to enhance 
+#precision in cases with small sample sizes.
+#Mean-Variance Trend: It accounts for the tendency that lower-intensity peptides 
+#have higher variance, which is crucial for mass spectrometry data.
+#Simple and Robust: It is a suitable alternative to more complex models (like voom) 
+#when library sizes or total intensities are relatively consistent across samples
+
+#head(dat_comp_mat_quant1) # without NAs, log, normalize 
+#dim(dat_comp_mat_quant1) # without NAs, log, normalize #8334   18
+
+#==========================================#
+#Step1: Mapping Accession number to Symbol
+#==========================================#
+
+head(pdat23_mat_norm) #median normailzed and filtered values - use this for mds plot
+dim(pdat23_mat_norm) #[1] 12298   18 #removed NA, without Symbol, median norm, log 2
+head(pprot_full_analysis)
+dim(pprot_full_analysis) #[1] 12298   18 #Normalized to total proteome; removed NA, without Symbol, median norm, log 2
+dim(pdat23_mat_norm) #[1] 12298   18 #removed NA, without Symbol, median norm, log 2
+
+#pdat.de = pdat23_mat_norm
+pdat.de = pprot_full_analysis
+
+# Change column names to not contain "-", since this will conflict with naming syntax in contrast matrix
+
+head(pdat.de)
+colnames(pdat.de)
+dim(pdat.de)
+#[1] 12298    18
+
+# Getting a data.frame with 'Accession' and 'Symbol' columns
+
+pmapping2 <- as.data.frame(cbind(rownames(pdat.de)))
+
+dim(pmapping2) #[1] 12298     1
+head(pmapping2)
+pmapping2.2<-as.data.frame(pmapping2)
+head(pmapping2.2)
+any(is.na(pmapping2.2))
+pmapping3 <- pmapping2
+dim(pmapping3) #[1] 12298     1
+
+library(dplyr)
+library(stringr)
+
+# Extract UniProt accession from site ID
+pmapping2$UniprotAcc <- str_extract(pmapping2$V1, "^[^_]+")
+any(is.na(pmapping2))
+head(pmapping2)
+dim(pmapping2) #[1] 12298     2
+
+#-----------------------------------------------------------------------#
+#Used Biomart first but had more missing symbols (747) (322 UNIQUE NAs)
+#-----------------------------------------------------------------------#
+
+library(biomaRt)
+#BiocManager::install("fastmap")
+#mart <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+#useMart: You are telling R to go online and connect to the Ensembl "market" (Mart).
+#dataset = "hsapiens_gene_ensembl": You are specifically asking for the Human (Homo sapiens) gene database.
+#mart
+#bm_map2 <- getBM(attributes = c("uniprotswissprot", "uniprotsptrembl", "hgnc_symbol"), 
+ #               filters = "uniprotsptrembl", 
+  #              values = (pmapping2$UniprotAcc), 
+   #             mart = mart)
+
+mart <- useEnsembl(biomart = "genes", 
+                   dataset = "hsapiens_gene_ensembl", 
+                   mirror = "useast") # Options: 'useast', 'uswest', 'asia'
+mart
+
+bm_map <- getBM(attributes = c("uniprotswissprot", "uniprotsptrembl", "hgnc_symbol"), 
+                filters = "uniprot_gn_id", 
+                values = (pmapping2$UniprotAcc), 
+                mart = mart)
+head(bm_map) #uniprotswissprot uniprotsptrembl hgnc_symbol
+
+#bm_map2 <- getBM(
+ # attributes = c("uniprotswissprot", "uniprotsptrembl", "uniparc", "hgnc_symbol"),
+  #filters = "uniprot_gn_id", # Or use "uniparc" if your input list contains UPI IDs
+  #values = pmapping2$UniprotAcc,
+  #mart = mart
+#)
+
+# Combine both columns into one 'UniprotAcc' for matching
+head(bm_map) #uniprotswissprot uniprotsptrembl hgnc_symbol
+dim(bm_map) #[1] 26937     3
+bm_clean <- bm_map %>%
+  pivot_longer(cols = c(uniprotswissprot, uniprotsptrembl), 
+               values_to = "UniprotAcc") %>%
+  filter(UniprotAcc != "", !is.na(UniprotAcc)) %>%
+  dplyr::select(UniprotAcc, hgnc_symbol) %>%  # Explicitly use dplyr
+  distinct()
+
+#bm_clean <- bm_map %>%
+ # pivot_longer(cols = c(uniprotswissprot, uniprotsptrembl), 
+   #            values_to = "UniprotAcc") %>%
+  #filter(UniprotAcc != "", !is.na(UniprotAcc)) %>%
+  #dplyr::select(UniprotAcc, hgnc_symbol)   # Explicitly use dplyr
+
+#pivot_longer(...): This moves data from "wide" to "long." 
+#It takes the two separate columns for UniProt IDs 
+#(uniprotswissprot and uniprotsptrembl) and stacks them into a single new column
+#called UniprotAcc.
+
+#filter(UniprotAcc != "", !is.na(UniprotAcc)): Since many genes might only have 
+#one type of ID (or none), the pivot creates a lot of empty or NA rows. 
+#This line scrubs those out so you only keep valid IDs.
+#dplyr::select(UniprotAcc, hgnc_symbol): This drops any extra metadata columns
+#from the original biomaRt query, leaving you with just the two columns you 
+#actually need for a mapping.
+#dplyr::distinct(): This is the final cleanup. Because one gene symbol can be 
+#associated with multiple protein isoforms (or the same ID might have appeared 
+#in both original columns), this ensures that every UniProt-to-Symbol pair is 
+#unique, preventing your data from "exploding" (duplicating rows) when you 
+#later join this to another dataset.
+
+head(bm_clean)
+dim(bm_clean) #without distinct - [1] 24522     2 # with distinct [1] 23176  2 
+head(pmapping2)
+dim(pmapping2)#[1] 12298     2
+pmapping4 <- pmapping2 %>%
+  left_join(bm_clean, by = "UniprotAcc")
+
+head(pmapping4)
+dim(pmapping4) #[1] 14460     3?? - without distincct #[1] 12315     3 - with distinct
+#[1] 12315     3
+
+dim(pmapping2)
+#[1] 12298     2
+
+#pmapping 4 nrows increased due to dupliates
+
+# Need to Deduplicate bm_clean first
+head(bm_clean)
+table(duplicated(bm_clean$UniprotAcc))
+#FALSE  TRUE 
+#23143    33
+
+bm_clean_unique <- bm_clean %>%
+  distinct(UniprotAcc, .keep_all = TRUE)
+table(duplicated(bm_clean_unique$UniprotAcc))
+#FALSE 
+#23143 
+
+# Joining
+pmapping4 <- pmapping2 %>%
+  left_join(bm_clean_unique, by = "UniprotAcc")
+
+# Result changed to 12298 rows
+dim(pmapping4) #[1] 12298     3
+dim(pmapping2) #[1] 12298     2 
+#Rows match
+head(pmapping4)
+head(pmapping2)
+
+pmapping4 %>%
+  group_by(UniprotAcc) %>%
+  filter(n() > 1) %>%
+  arrange(UniprotAcc)
+
+# Replace literal dashes with NA
+pmapping4[grep("A0A494C030_T152", pmapping4$V1), ]
+pmapping4[grep("A0A494C066_T26/T32", pmapping4$V1), ]
+#hgnc_symbol blank, so replace with NA
+pmapping4$hgnc_symbol[pmapping4$hgnc_symbol == "-"] <- NA
+pmapping4$hgnc_symbol[pmapping4$hgnc_symbol == ""] <- NA
+pmapping4[grep("A0A494C030_T152", pmapping4$V1), ]
+pmapping4[grep("A0A494C066_T26/T32", pmapping4$V1), ]
+#pmappingde[grep("_T26/T32", pmappingde$Symbol), ]
+# Accession   Symbol
+#978 A0A494C066_T26/T32 _T26/T32
+
+table(is.na(pmapping4$UniprotAcc))
+#FALSE 
+#12298 
+table(is.na(pmapping4$hgnc_symbol))
+#FALSE  TRUE 
+#11568   747
+#FALSE  TRUE 
+#11549   749
+
+needs_mapping2 <- is.na(pmapping4$hgnc_symbol)
+head(needs_mapping2)
+
+missing_ids2 <- unique(pmapping4$UniprotAcc[needs_mapping2])
+head(missing_ids2)
+length(missing_ids2)
+#[1] 324 (old=322 before replacing blank)
+
+#pmapping4 has bm_clean=biomart joined
+#rownames(pdat.de)[grep("_T152", rownames(pdat.de))]
+head(pmapping4)
+pmapping4[grep("A0A494C030_T152", pmapping4$V1), ] #hgnc_symbol blank
+#        Accession      Symbol
+#977  A0A494C030_T152       _T152
+#7445     Q6ZN55_T152 ZNF574_T152
+
+head(missing_ids2)
+missing_ids2[grep("A0A494C030", missing_ids2)]
+#Indicates some rows are just Blank!!!! - fixed 04252026
+
+
+#-----------------------------------------------------------------------#
+# 1. Query Org.HS.db for ONLY those specific IDs
+#-----------------------------------------------------------------------#
+
+# BiocManager::install("org.Hs.eg.db")
+library(org.Hs.eg.db)
+head(pmapping4)
+head(missing_ids2)
+map_res <- mapIds(org.Hs.eg.db, 
+                  keys = missing_ids2, 
+                  column = "SYMBOL", 
+                  keytype = "UNIPROT", 
+                  multiVals = "first")
+#Symbol: This is the information I want back." You are specifically asking for the HGNC Gene Symbol (like ELOA).
+#Keytype: This tells R: "This is what my input IDs are."
+#multiVals = "first"
+
+head(map_res)
+# Add it back to your table
+
+head(missing_ids2)
+missing_idsmap<-as.data.frame(missing_ids2)
+head(missing_idsmap)
+
+#pmapping6<-pmapping2
+#head(pmapping6)
+missing_idsmap$Symbol <- map_res
+head(missing_idsmap)
+any(is.na(missing_idsmap))
+table(is.na(missing_idsmap$missing_ids2))
+#FALSE 
+#324
+table(is.na(missing_idsmap$Symbol))
+#FALSE  TRUE 
+#115   209
+head(missing_idsmap)
+
+pmapping4[grep("A0A494C030_T152", pmapping4$V1), ] #hgnc_symbol blank
+pmapping4[grep("A0A494C066_T26/T32", pmapping4$V1), ]
+missing_idsmap[grep("A0A494C030", missing_idsmap$missing_ids2), ] #hgnc_symbol blank - updated: LOC114841035
+missing_idsmap[grep("A0A494C066", missing_idsmap$missing_ids2), ] #hgnc_symbol blank - updated: KYAT1
+
+#pmapping4 has bm_clean=biomart joined
+#missing_idsmap like bm clean but org hs
+
+head(missing_idsmap)
+head(missing_ids2) #was used for missing_idsmap
+
+#Org.Hs standardized mapping table
+org_hs_clean <- missing_idsmap %>%
+  dplyr::select(UniprotAcc = missing_ids2, symbol_org_hs = Symbol) %>%
+  filter(!is.na(symbol_org_hs))
+head(org_hs_clean)
+dim(org_hs_clean)#[1] 115   2
+
+needs_mapping3 <- is.na(missing_idsmap$Symbol)
+head(needs_mapping3)
+
+missing_ids3 <- unique(missing_idsmap$missing_ids2[needs_mapping3])
+head(missing_ids3)
+length(missing_ids3)
+#[1] 209
+
+#-----------------------------------------------------------------------#
+# 2. Query UniProt for ONLY those specific IDs
+#-----------------------------------------------------------------------#
+
+library(UniProt.ws)
+up <- UniProt.ws(taxId = 9606)
+keytypes(up)
+columns(up)
+# Querying "GENE_NAMES" to get the symbols (like ELOA)
+
+#extra_map <- select(up, 
+#                   keys = missing_ids, 
+#                  columns = c("uniparc_id","xref_ensembl","gene_names", "gene_synonym","gene_primary"),
+#                 keytype = "UniProtKB")
+
+extra_map <- AnnotationDbi::select(up,
+                                   keys = missing_ids3,
+                                   columns = c("xref_refseq","uniparc_id","xref_ensembl","gene_names", "gene_synonym", "gene_primary"),
+                                   keytype = "UniProtKB")
+
+head(extra_map)
+table(is.na(extra_map$Gene.Names))
+#FALSE  TRUE 
+#  99   110 
+nrow(extra_map) #[1] 209
+
+nrow(extra_map) == length(missing_ids3)
+#[1] TRUE
+
+#pmapping4 has bm_clean=biomart joined
+#missing_idsmap like bm clean but org hs
+#extra_map = uniprot.ws mapping (Gene.Names)
+
+#Uniprot.ws standardized mapping table
+
+uniprot_ws_clean <- extra_map %>%
+  mutate(symbol_uni_ws = sub(" .*", "", Gene.Names)) %>%
+  dplyr::select(UniprotAcc = From, symbol_uni_ws) %>%
+  filter(!is.na(symbol_uni_ws))
+
+head(uniprot_ws_clean)
+dim(uniprot_ws_clean) #[1] 99  2
+
+ids_to_fix <- extra_map$From[is.na(extra_map$Gene.Names)]
+head(ids_to_fix)
+length(ids_to_fix) 
+#110
+
+# Copy these from your console
+cat(ids_to_fix, sep = ", ") 
+
+head(ids_to_fix)
+length(ids_to_fix)
+
+#-----------------------------------------------------------------------#
+#Manual map
+#-----------------------------------------------------------------------#
+
+# Create the manual lookup table
+manual_map <- data.frame(
+  UniprotAcc = c(
+    "A0A024RAC6", "A0A024RCR6", "A0A075B6Q3", "A0A075B793", "A0A087WSZ7", 
+    "A0A087WT80", "A0A087WTB8", "A0A087WTG3", "A0A087WTQ6", "A0A087WUV9", 
+    "A0A087WVR4", "A0A087WW39", "A0A087WW83", "A0A087WWA7", "A0A087WWC4", 
+    "A0A087WWM5", "A0A087WWT0", "A0A087WXL3", "A0A087WXW3", "A0A087WXX9", 
+    "A0A087WXZ7", "A0A087WY61", "A0A087WYH9", "A0A087WYN9", "A0A087WYX6", 
+    "A0A087WZK9", "A0A087WZU8", "A0A087X060", "A0A087X0G1", "A0A087X0K0", 
+    "A0A087X1S9", "A0A087X2D8", "A0A096LNX8", "A0A0A0MS54", "A0A0A0MS59", 
+    "A0A0A0MSI8", "A0A0A0MSL3", "A0A0A0MSU2", "A0A0A0MT60", "A0A0A0MTC6", 
+    "A0A0A0MTG6", "A0A0A0MTH9", "A0A0A0MTS2", "A0A0C4DGW2", "A0A0C4DGZ1", 
+    "A0A0D9SF60", "A0A0D9SFF8", "A0A0J9YYL3", "A0A0U1RQB7", "A0A1P0AZG4", 
+    "A0A1W2PNZ9", "A0A1W2PQ51", "A0A1W2PQ75", "A0A1W2PQJ7", "A0A1W2PQQ1", 
+    "A0A1W2PR67", "A0A1W2PRA1", "A0A1W2PRL9", "A0A2Q2TH77", "A0A2R8Y4C2", 
+    "A0A2R8Y611", "A0A2R8YFF1", "A0A3B3IS11", "A0A3B3ITS5", "A0A494C1P3", 
+    "A9X3U0", "B1AKJ5", "B5MD58", "C9J519", "C9JQ72", "D3DP56", "D6RA44", 
+    "D6W5A2", "E7ENH0", "E7ENN3", "E7EST9", "E9PJ09", "F5H212", "F5H5I6", 
+    "F6S7C4", "F6TB26", "F6WH68", "F8W6L4", "F8WAN9", "G3V261", "H0YJ75", 
+    "H0YL38", "H0YMB6", "H0YN96", "H3BLV5", "H3BN59", "H3BQQ2", "H7C1J4", 
+    "J3KNN5", "J3KR44", "J3QSX6", "K7EIV9", "K7EPK0", "M9T4I7", "P0DN79", 
+    "Q499Y3", "Q5JPT1", "Q6ZQT7", "Q6ZSR3", "Q71RC1", "Q8IWY7", "S4R2X8", 
+    "S4R347", "V9GYY5", "W4VSQ3"
+  ),
+  ManualSymbol = c(
+    "ELOA", "RCR6", "IGLV6-57", "IGLV10-54", "MMP24", 
+    "ZNF232", "ZBTB21", "ZNF837", "ZNF490", "MYC", 
+    "ZNF782", "ZBTB1", "ZNF629", "ZNF711", "ZNF684", 
+    "ZNF564", "ZNF682", "ZNF33A", "ZNF563", "ZNF491", 
+    "ZNF844", "ZNF121", "ZNF584", "ZNF525", "ZNF160", 
+    "ZNF567", "ZNF846", "ZNF43", "ZNF28", "ZNF44", 
+    "ZNF558", "ZNF20", "MAP2", "IGKV1-16", "IGKV1D-16", 
+    "IGKV1-27", "IGKV1D-33", "IGKV2-30", "IGLV2-18", "IGLV3-25", 
+    "IGLV1-44", "IGLV1-47", "IGLV5-45", "IGLV1-36", "IGLV1-41", 
+    "IGHV3-13", "IGHV3-30", "IGHV3-49", "ZNF891", NA, 
+    "IGLV1-40", "IGLV2-8", "IGLV2-11", "IGLV3-1", "IGLV3-19", 
+    "IGLV3-27", "IGLV4-3", "IGLV7-43", NA, "IGHV1-2", 
+    "IGHV3-7", "IGHV4-31", "IGHV3-21", "IGHV3-64", NA, 
+    "ZNF253", "ZNF625", "ZNF417", "ZNF500", "ZNF8", "ZNF235", "ZNF83", 
+    "ZNF431", "ZNF773", "ZNF772", "ZNF829", "ZNF568", "ZNF607", "ZNF551", 
+    "ZNF570", "ZNF789", "ZNF664", "ZNF732", "ZNF724", "ZNF433", "ZNF582", 
+    "ZNF709", "ZNF77", "ZNF708", "ZNF780B", "ZNF559", "ZNF135", "ZNF543", 
+    "ZNF793", "ZNF836", "ZNF616", "ZNF735", "ZNF425", "ZNF671", "AARS1", 
+    "ZNF814", "ZNF605", "ZNF714", "ZNF736", "ZNF548", "ZNF843", "ZNF831", 
+    "ZNF813", "ZNF583", "ZNF524"
+  ),
+  stringsAsFactors = FALSE
+)
+
+head(manual_map)
+dim(manual_map)
+head(ids_to_fix)
+
+(manual_map$UniprotAcc) == ids_to_fix
+#All true
+
+table(is.na(manual_map$ManualSymbol))
+#FALSE  TRUE 
+#107     3
+
+library(dplyr)
+
+# Filter for missing symbols
+na_symbols <- manual_map %>% 
+  filter(is.na(ManualSymbol))
+
+# Display the results
+print(na_symbols)
+
+head(manual_map)
+# Update the specific ID in the existing manual_map dataframe
+manual_map$ManualSymbol[manual_map$UniprotAcc == "A0A1P0AZG4"] <- "LCOR"
+manual_map$ManualSymbol[manual_map$UniprotAcc == "A0A2Q2TH77"] <- "GOLGA2"
+#manual_map$ManualSymbol[manual_map$UniprotAcc == "A0A494C1P3"] <- "MOSC domain containing protein"
+manual_map$ManualSymbol[manual_map$UniprotAcc == "A0A494C1P3"] <- "MOSC2"
+
+# Verify the change
+manual_map %>% filter(UniprotAcc == "A0A1P0AZG4")
+manual_map %>% filter(UniprotAcc == "A0A2Q2TH77")
+manual_map %>% filter(UniprotAcc == "A0A494C1P3")
+
+head(manual_map)
+table(is.na(manual_map$ManualSymbol))
+#FALSE 
+#110
+dim(manual_map) #110   2
+
+#pmapping4 has bm_clean=biomart joined
+#missing_idsmap like bm clean but org hs
+#extra_map = uniprot.ws mapping (Gene.Names)
+#manual_map is  all manual map
+
+#Thus,
+
+#pmapping4 has bm_clean=biomart joined
+#missing_idsmap like bm clean but org hs; org_hs_clean = mapping table
+#extra_map = uniprot.ws mapping (Gene.Names); uniprot_ws_clean = mapping table
+#manual_map is  all manual map
+
+#-----------------------------------------------------------------------#
+#Integration of all mapping:
+#-----------------------------------------------------------------------#
+
+library(dplyr)
+
+# 1. Standardize your intermediate mapping tables for joining
+# From org.Hs.eg.db
+head(org_hs_clean) 
+dim(org_hs_clean)#[1] 115   2 #old-with blank=113
+
+# From UniProt.ws (cleaning Gene.Names to get just the first symbol)
+head(uniprot_ws_clean) 
+dim(uniprot_ws_clean) #[1] 99  2
+
+head(manual_map) 
+dim(manual_map) #[1] 110  2
+
+nrow(org_hs_clean)+nrow(uniprot_ws_clean)+nrow(manual_map)
+#[1] 324 #old with blank =322
+
+#table(is.na(pmapping4$UniprotAcc))
+#FALSE 
+#12298 
+#table(is.na(pmapping4$hgnc_symbol))
+#FALSE  TRUE 
+#11568   747
+
+#needs_mapping2 <- is.na(pmapping4$hgnc_symbol)
+#head(needs_mapping2)
+
+#missing_ids2 <- unique(pmapping4$UniprotAcc[needs_mapping2])
+head(missing_ids2)
+length(missing_ids2)
+#[1] 324
+
+
+# 2. Sequential Join
+head(pmapping4)
+pmapping10 <- pmapping4 %>%
+  # Join automatic sources
+  left_join(org_hs_clean, by = "UniprotAcc") %>%
+  left_join(uniprot_ws_clean, by = "UniprotAcc") %>%
+  # Join manual source
+  left_join(manual_map, by = "UniprotAcc") %>%
+ 
+  # 3. Create 'source' and final 'hgnc_symbol' columns
+  mutate(
+    Symbol = coalesce(hgnc_symbol, symbol_org_hs, symbol_uni_ws, ManualSymbol),
+    
+    source = case_when(
+      !is.na(hgnc_symbol) ~ "biomart",
+      !is.na(symbol_org_hs) ~ "org_hs_db",
+      !is.na(symbol_uni_ws) ~ "uniprot_ws",
+      !is.na(ManualSymbol) ~ "manual",
+      TRUE ~ "accession_only"
+    ))
+    
+#This case_when logic acts like a priority ladder. 
+#It evaluates each row from top to bottom and assigns a label based on the
+#first column that isn't empty (NA).
+#Here is the step-by-step explanation:
+ # !is.na(hgnc_symbol) ~ "biomart":
+ # R looks at the original BioMart column first.
+#If a symbol is found here, it tags it "biomart" and stops looking at 
+#other sources for this row. This preserves your primary data source.
+#!is.na(symbol_org_hs) ~ "org_hs_db":
+#  If BioMart was empty, R checks the org.Hs.eg.db results.
+#If a match is found here, it tags it "org_hs_db".
+#!is.na(symbol_uni_ws) ~ "uniprot_ws":
+#  If both previous sources were empty, it checks the UniProt.ws results.
+#If found, it tags it "uniprot_ws".
+#!is.na(ManualSymbol) ~ "manual":
+#  If all automated tools failed, it looks at your manual map (the 110 IDs we fixed).
+#If found, it tags it "manual".
+#TRUE ~ "accession_only":
+#  This is the "catch-all." If every single source above was NA,
+#it assigns the label "accession_only".
+#In your coalesce function, this corresponds to using the UniProt Accession itself as the symbol.
+
+
+    # Final fallback: use Accession ID if everything else is NA
+    #hgnc_symbol = coalesce(hgnc_symbol, UniprotAcc)
+  #) %>%
+  
+  # Clean up temporary columns
+  #dplyr::select(-symbol_org_hs, -symbol_uni_ws, -ManualSymbol)
+
+# 4. Verification
+#table(pmapping_final$source)
+
+head(pmapping10) #has all columns including source
+table(is.na(pmapping10$Symbol))
+#FALSE 
+#12298 
+table(is.na(pmapping10$V1))
+#FALSE 
+#12298 
+# Count how many are tagged as accession_only
+table(pmapping10$source == "accession_only")
+#FALSE 
+#12298  
+
+colnames(pmapping10)[colnames(pmapping10) == "V1"] <- "SiteID"
+head(pmapping10) #has all columns including source
+
+pmapping11 <- pmapping10 %>%
+  mutate(
+    # Create a unique display name: e.g., "DYNC1H1_S415"
+    Symbol_Site = paste0(Symbol, "_", sub(".*_", "", SiteID)) 
+  ) 
+#. matches any character.
+#* means "any number of times."
+#_ is the specific character you are looking for.
+#Together, .*_ finds the longest possible string ending in an underscore (greedy match)
+#replaces with nothing
+
+
+#To check:
+
+head(pmapping11)
+table(is.na(pmapping11$Symbol_Site))
+#FALSE 
+#12298 
+
+table(is.na(pmapping11$SiteID))
+#FALSE 
+#12298 
+
+pmapping11 %>% 
+  dplyr::filter(UniprotAcc  == "I3L4X2")
+
+pmapping11 %>% 
+  dplyr::filter(UniprotAcc  == "A0A494C030")
+
+pmapping11 %>% 
+  dplyr::filter(UniprotAcc  == "A0A494C066")
+
+table(duplicated(pmapping11$SiteID))
+#FALSE   
+#12298    
+
+table(duplicated(pmapping11$Symbol_Site))
+#FALSE  TRUE 
+#12289     9
+
+head(pmapping11)
+dim(pmapping11) #has all rows merged
+
+#To check for duplicated Symbol_Site in pmapping 11
+
+pmapping11 %>%
+  group_by(Symbol_Site) %>%
+  filter(n() > 1) %>%
+  arrange(Symbol_Site)
+
+pmapping12 <- pmapping11 %>%
+  # Sort so that SiteIDs with semicolons (longer strings) come first
+  arrange(Symbol_Site, desc(nchar(SiteID))) %>% 
+  # Keep only the first occurrence of each Symbol_Site
+  distinct(Symbol_Site, .keep_all = TRUE)
+
+# Verify the count is now 12289
+dim(pmapping12) #After removing semicolon and single-- but not needed for dea
+#[1] 12289     9
+
+pmapping12 %>%
+  group_by(Symbol_Site) %>%
+  filter(n() > 1) %>%
+  arrange(Symbol_Site)
+
+library(dplyr)
+pmapping12 %>% 
+  filter(grepl("B4DY08_S247;P07910_S260", SiteID))
+
+head(pdat.de)
+# Filter for both variations of the HNRNPC site
+
+#pdat.de=matrix
+
+pdat.de[rownames(pdat.de) %in% c("B4DY08_S247;P07910_S260", "P07910_S260"), ]
+
+#The values are different. This means your quantification software identified and measured these as two distinct events (likely two different peptides or charge states that map to the same site).
+#Conclusion: Keep all 12,298 rows
+#Since the intensities are not identical, these are not "accidental" duplicates. They represent unique data points. If you delete one, you are throwing away real measurements.
+
+# 1. Get the SiteIDs for all duplicate Symbol_Sites
+head(pmapping11) #has all columns
+dim(pmapping11)
+dup_site_idscheck <- pmapping11 %>%
+  group_by(Symbol_Site) %>%
+  filter(n() > 1) %>%
+  pull(SiteID)
+dup_site_idscheck
+length(dup_site_idscheck) # 18
+# 2. Subset the matrix using those IDs
+pdat.de[rownames(pdat.de) %in% dup_site_idscheck, ]
+
+#But need paired for ease of view
+
+sorted_ids <- pmapping11 %>%
+  filter(SiteID %in% rownames(pdat.de)) %>% # ensure IDs exist in matrix
+  arrange(Symbol_Site) %>%
+  pull(SiteID)
+
+#The %in% operator in R is a matching operator used to check if elements from one vector exist within another. 
+#filter(SiteID %in% rownames(pdat.de)): filter(SiteID %in% rownames(pdat.de)): 
+#It looks at the SiteID column and only keeps rows where that ID actually exists 
+#as a row name in your data matrix (pdat.de). This prevents "subscript out of bounds" errors later.
+#arrange(Symbol_Site): This sorts the entire data frame alphabetically based on the Symbol_Site column
+#pull(SiteID): Finally, instead of keeping the whole data frame, this "plucks" out just the SiteID column as a simple list (vector)
+
+head(sorted_ids)
+# 2. Reorder your matrix
+pdat.de_sorted <- pdat.de[sorted_ids, ]
+head(pdat.de_sorted) #entire pdat.de sorted based on names order
+head(dup_site_idscheck) #Just the dupliccated site ids
+# 3. View the 18 rows again - they will now be paired
+pdat.de_sorted[rownames(pdat.de_sorted) %in% dup_site_idscheck, ]
+
+pmapping11 %>%
+  group_by(Symbol_Site) %>%
+  filter(n() > 1) %>%
+  arrange(Symbol_Site)
+
+#all values are different; so keep 12298 as they could just be isoforms
+
+head(pmapping11) #J_Has all columns for mapping reference
+dim(pmapping11) #[1] 12298     9
+
+# Create a simplified mapping file with only 2 columns
+pmappingde <- pmapping11 %>%
+  dplyr::select(SiteID, Symbol_Site) %>%
+  # Ensure the rows are in the exact same order as your expression matrix
+  dplyr::filter(SiteID %in% rownames(pdat.de)) %>%
+  dplyr::slice(match(rownames(pdat.de), SiteID))
+
+#dplyr::filter(SiteID %in% rownames(pdat.de))
+#This removes rows.
+#It looks at pmapping11 and keeps only the SiteIDs that are actually present in your expression matrix (pdat.de)
+
+#dplyr::slice(match(rownames(pdat.de), SiteID))
+#This reorders rows.
+#In R, matrix math (like DE analysis) happens row-by-row. If Row 1 of your matrix is NSRP1_S194, Row 1 of your mapping file must also be NSRP1_S194.
+#match() calculates exactly which row position in pmapping11 corresponds to the row names in pdat.de.
+#slice() then physically picks up those rows and puts them in that exact order.
+#slice() lets you index rows by their (integer) locations.
+
+# Verify the result
+head(pmappingde)
+dim(pmappingde) # 12298 x 2
+colnames(pmappingde) <- c('Accession','Symbol')
+
+#-----------------------------------------------------------------------#
+#Final files for DE analysis
+#-----------------------------------------------------------------------#
+
+head(pmapping11) #J_Has all columns for mapping reference
+dim(pmapping11)
+head(pmappingde) #Has only 2 columns for DEA
+dim(pmappingde) # 12298 x 2
+
+head(pdat.de) #Median normalized matrix for DEA
+dim(pdat.de)
+dim(pmappingde) # 12298 x 2
+
+
+#---------------------------------------------------------------------------------------------#
+#Step 2: Design and Contrast Matrix for Differential Expression Analysis using Limma trend
+#---------------------------------------------------------------------------------------------#
+
+#===============================================================================================================#
+#---------------------------------------------------------------------------------------------#
+#Sample Calculation - Design and Contrast Matrix 
+#---------------------------------------------------------------------------------------------#
+
+# Design matrix
+#colnames(dat)
+#tx = extract_string(colnames(dat), "_", 2)
+#tx
+#X = model.matrix(~0 + tx)
+#X
+#colnames(X) = sort(unique(tx))
+#X #design matrix - with treatment labels
+
+# Contrast matrix
+#make sure to not include any numbers as it would cause problems
+#contrasts = c("TMG-saline", "OGTKO-OGTWT", "OGAKO-OGAWT")
+#contrasts
+#cm_dat = makeContrasts(contrasts = contrasts, levels = colnames(X))
+#cm_dat #contrast matrix - the comparisons
+
+#=================================================================================#
+#------------------#
+# Design matrix
+#------------------#
+head(pdat.de)
+pdat.de1<-pdat.de
+head(pdat.de1)
+dim(pdat.de1)
+colnames(pdat.de1)<-c('GFPCTRL_1','GFPCTRL_2','GFPCTRL_3','GFPTEN_1','GFPTEN_2','GFPTEN_3','OGTCTRL_1','OGTCTRL_2','OGTCTRL_3','OGTTEN_1','OGTTEN_2','OGTTEN_3','ROGTCTRL_1','ROGTCTRL_2','ROGTCTRL_3','ROGTTEN_1','ROGTTEN_2','ROGTTEN_3')
+colnames(pdat.de1)
+colnames(pdat.de)
+head(pdat.de1) #Used for DEA beause colnames changed
+
+colnames(pdat.de1)
+ptxa = extract_string(colnames(pdat.de1), "_", 1)
+ptxa
+pXa = model.matrix(~0 + ptxa)
+pXa
+colnames(pXa) = sort(unique(ptxa))
+pXa #design matrix
+
+#------------------#
+# Contrast matrix
+#------------------#
+colnames(pXa)
+#contrast.matrix <- makeContrasts(group2-group1, group3-group2, group3-group1, levels=design)
+pcontrastsa = c("GFPTEN-GFPCTRL", "OGTTEN-OGTCTRL", "ROGTTEN-ROGTCTRL")
+pcontrastsa
+pXa
+pcm_data1 = makeContrasts(contrasts=pcontrastsa, levels=colnames(pXa))
+pcm_data1 #contrast matrix
+
+#Try to make another contrast matrix for OGT VS GFP
+pcontrastsb = c("GFPTEN-GFPCTRL", "OGTTEN-OGTCTRL", "ROGTTEN-ROGTCTRL","OGTCTRL-GFPCTRL","OGTTEN-GFPTEN","ROGTCTRL-GFPCTRL","ROGTTEN-GFPTEN")
+pcontrastsb
+pXa
+pcm_data = makeContrasts(contrasts=pcontrastsb, levels=colnames(pXa))
+pcm_data #contrast matrix
+
+#===============================================================================================================================================================#
+#--------------------------------------------------------------#
+# Step 3: Phosphoproteomics Differential Expression Analysis
+#--------------------------------------------------------------#
+
+#------------------#
+#Limma explanation
+#------------------#
+#Check out this recent paper by the authors which is precisely focused on explaining design matrices.
+
+#Basically, limma (and other software) are focused on using linear models to analyse your data, 
+#because these tools let you represent/model your study, taking into account any variables which are
+#of interest to you.
+
+#For example, you may want to compare expression of gene X between young and old samples. 
+#A t-test will simply compare the means of the groups. However, sex may influence 
+#the expression of gene X. A linear model lets you take into account sex when comparing
+#the expression between young and old groups.
+
+#Having said this, design matrices are the way that you indicate the study 
+#variables to model (e.g., age and sex), and contrast matrices are the way that you 
+#indicate which variables you want to test (e.g. age) between which groups.
+#https://www.biostars.org/p/9554210/
+
+#Linear models describe a continuous response variable as a function of one or more predictor variables. 
+#eg linear regression
+
+
+# Fitting models. The trend=TRUE argument indicates that the mean-variance trend will be accounted for in eBayes (limma-trend method)
+
+#=========================================================================================#
+#-----------------------------------#
+#Sample calculation 
+#-----------------------------------#
+
+# Fitting models. The trend=TRUE argument indicates that the mean-variance trend will be accounted for in eBayes (limma-trend method)
+
+#de = top_table_results(mapping, dat, X, cm_dat, annotate = TRUE, trend = TRUE)
+#gene.symbol = extract_string(de$tt$Symbol, "\\.", 1)
+#tmp = aggregate(de$tt[,-c(11,12)], by = list(Symbol = gene.symbol), FUN = median)
+#tmp$Accession = de$tt$Accession[match(tmp$Symbol, gene.symbol)] # Get the first listed Accession ID for each gene symbol
+#head(tmp$Accession)
+#de$tt = tmp
+
+#head(de$tt)
+
+#=========================================================================================#
+#-----------------------------------#
+#Sample calculation - elaboration
+#-----------------------------------#
+# Fitting models. The trend=TRUE argument indicates that the mean-variance trend 
+#will be accounted for in eBayes (limma-trend method)
+
+#de = top_table_results(mapping, dat, X, cm_dat, annotate = TRUE, trend = TRUE)
+
+#In proteomics, the limma-trend method is often preferred because it accounts for 
+#the fact that low-intensity proteins usually have more "noise" than high-intensity ones.
+
+#head(de)
+#head(de$tt$Symbol)
+
+#table(grepl("\\.", de$tt$Symbol))
+#grepl(): Short for "grep logical." It returns a vector of TRUE or FALSE values 
+#rather than indices, which is perfect for filtering data frames.
+#FALSE  TRUE 
+#4743    92 
+#92 gene symbols have "."; eg: "Uchl5"   "Uchl5.2
+
+#head(de$tt$Symbol[grepl("\\.", de$tt$Symbol)])
+
+#grep("^Acly", de$tt$Symbol, value = TRUE, ignore.case = TRUE)
+#The ^ ensures it starts with Acly (so you don't accidentally get other genes containing those letters).
+#ignore.case = TRUE handles "ACLY", "Acly", or "acly"
+#grep("^Pcid2", de$tt$Symbol, value = TRUE, ignore.case = TRUE)
+#grep("^Uchl5", de$tt$Symbol, value = TRUE, ignore.case = TRUE)
+#[1] "Uchl5"   "Uchl5.2"
+
+#gene.symbol = extract_string(de$tt$Symbol, "\\.", 1)
+
+#Uchl5.2": The function splits it at the dot into ["Uchl5", "2"]. It then grabs the 1st piece: "Uchl5".
+
+#In proteomics datasets, the difference between Uchl5 and Uchl5.2 (or any gene with a .2, .3 suffix)
+#typically indicates that multiple unique protein sequences (Accession IDs)
+#mapped to the same single Gene Symbol. 
+
+# Sometimes gene symbols come with extra version numbers or suffixes (like Gene.1). 
+#gene.symbol = extract_string(de$tt$Symbol, "\\.", 1)
+#uses your extract_string function to chop off everything after the first period (.), 
+#leaving just the clean gene name (e.g., "OGT").
+
+#head(gene.symbol)
+#grep("^Uchl5", gene.symbol, value = TRUE, ignore.case = TRUE)
+#[1] "Uchl5"   "Uchl5"; so '.' removed
+
+#colnames(de$tt)
+#any(duplicated(de$tt$Symbol))
+#tmp = aggregate(de$tt[,-c(11,12)], by = list(Symbol = gene.symbol), FUN = median) #removing "Accession" and "Symbol" 
+#tmp$Accession = de$tt$Accession[match(tmp$Symbol, gene.symbol)] # Get the first listed Accession ID for each gene symbol
+#head(tmp$Accession)
+#head(de$tt)
+#head(tmp)
+
+#de$tt = tmp
+
+#head(de$tt)
+#========================================================================================================================================#
+#------------------------------------------------------------------#
+#Step 3: Differential Expression Analysis with troubleshooting
+#------------------------------------------------------------------#
+
+#head(pdat.de)
+#head(pdat.de1)
+#head(pmappingde)
+#pXa
+#pcm_data
+#pdea = top_table_results(pmappingde, pdat.de1, pXa, pcm_data, annotate = TRUE, trend = TRUE)
+###de = top_table_results(mapping, dat, X, cm_dat, annotate = TRUE, trend = TRUE)
+
+#head(pdea)
+#head(pdea$tt) 
+#ncol(pdea$tt) #24 columns #log FC 
+###pgene.symbola = extract_string(pdea$tt$Symbol, "\\.", 1)
+#pgene.symbol = pdea$tt$Symbol #because we have symbol ids
+###gene.symbol = extract_string(de$tt$Symbol, "\\.", 1)
+###strsplit(x, "\\."): Breaks a string like "ENSG000001.2" into two parts: [1] "ENSG000001" and [2] "2". and keeps 1st part [1]
+#head(pgene.symbol)
+#head(pdea$tt$Symbol)
+#length(pgene.symbol) #[1] 12298
+#length(pdea$tt$Symbol) #[1] 12298
+### both match
+#ncol(pdea$tt) #24 columns #log FC
+#head(pdea$tt)
+#head(pdea$tt$Accession)
+#head(pdea$tt)
+###R, aggregate() is a workhorse for "Split-Apply-Combine." It splits your data into groups,
+###applies a function (like mean or median), and combines the results into a new data frame.
+###Identify numeric columns only (excluding the original Symbol/Accession columns)
+#any(duplicated(pdea$tt$Accession))
+###[1] FALSE
+#ncol(pdea$tt) #24
+#head(pgene.symbol)
+#length(pgene.symbol)
+#ptmpa = aggregate(pdea$tt[,-c(23,24)], by = list(Symbol = pgene.symbol), FUN = median) #Removing non numeri accession and symbol cols
+###tmp = aggregate(de$tt[,-c(11,12)], by = list(Symbol = gene.symbol), FUN = median) #Removing non numeri accession and symbol cols
+
+#head(ptmpa)
+#ptmpa$Symbol[1:10]
+#head(pgene.symbol)
+
+###Checking data (Originally used to fix mapping)
+#head(pdea$tt$Symbol[grep("_T152", pdea$tt$Symbol)])
+#head(pdea$tt$Symbol[grep("_T26/T32", pdea$tt$Symbol)])
+#head(pmappingde$Symbol[grep("_T152", pmappingde$Symbol)])
+#head(pmappingde$Symbol[grep("_T26/T32", pmappingde$Symbol)])
+#head(pdat.de)
+#rownames(pdat.de)[grep("_T152", rownames(pdat.de))]
+#pmappingde[grep("_T152", pmappingde$Symbol), ]
+###Fixed mapping
+
+#head(pdea$tt)
+#head(ptmpa)
+#head(pgene.symbol)
+
+#ptmpa$Accession = pdea$tt$Accession[match(ptmpa$Symbol, pgene.symbol)] # Get the first listed Accession ID for each gene symbol
+###tmp$Accession = de$tt$Accession[match(tmp$Symbol, gene.symbol)] # Get the first listed Accession ID for each gene symbol
+
+###Check
+#head(ptmpa)
+###head(pmapping11)
+#pmapping11 %>% 
+#  dplyr::filter(Symbol_Site  == "AAAS_S495")
+
+#head(ptmpa$Accession)
+###head(tmp$Accession)
+
+#head(pdea$tt)
+
+#pdea$tt = ptmpa
+###de$tt = tmp
+
+#head(pdea$tt)
+###head(de$tt)
+
+#head(pdea$tt)
+#head(ptmpa)
+
+#=========================================================================================#
+#-----------------------------------#
+#Sample calculation 
+#-----------------------------------#
+
+# Fitting models. The trend=TRUE argument indicates that the mean-variance trend will be accounted for in eBayes (limma-trend method)
+
+#de = top_table_results(mapping, dat, X, cm_dat, annotate = TRUE, trend = TRUE)
+#gene.symbol = extract_string(de$tt$Symbol, "\\.", 1)
+#tmp = aggregate(de$tt[,-c(11,12)], by = list(Symbol = gene.symbol), FUN = median)
+#tmp$Accession = de$tt$Accession[match(tmp$Symbol, gene.symbol)] # Get the first listed Accession ID for each gene symbol
+#head(tmp$Accession)
+#de$tt = tmp
+
+#head(de$tt)
+
+#=========================================================================================#
+
+#=========================================================================================#
+#--------------------------------------------------------------#
+# Step 3: Phosphoproteomics Differential Expression Analysis
+#--------------------------------------------------------------#
+
+head(pdat.de)
+head(pdat.de1)
+head(pmappingde)
+pXa
+pcm_data
+pdea = top_table_results(pmappingde, pdat.de1, pXa, pcm_data, annotate = TRUE, trend = TRUE)
+#de = top_table_results(mapping, dat, X, cm_dat, annotate = TRUE, trend = TRUE)
+head(pdea)
+head(pdea$tt) 
+ncol(pdea$tt) #24 columns #log FC 
+#pgene.symbola = extract_string(pdea$tt$Symbol, "\\.", 1)
+pgene.symbol = pdea$tt$Symbol #because we have symbol ids
+#gene.symbol = extract_string(de$tt$Symbol, "\\.", 1)
+#strsplit(x, "\\."): Breaks a string like "ENSG000001.2" into two parts: [1] "ENSG000001" and [2] "2". and keeps 1st part [1]
+head(pgene.symbol)
+head(pdea$tt$Symbol)
+length(pgene.symbol) #[1] 12298
+length(pdea$tt$Symbol) #[1] 12298
+# both match
+head(pdea$tt$Accession)
+
+#R, aggregate() is a workhorse for "Split-Apply-Combine." It splits your data into groups,
+#applies a function (like mean or median), and combines the results into a new data frame.
+# Identify numeric columns only (excluding the original Symbol/Accession columns)
+any(duplicated(pdea$tt$Accession))
+#[1] FALSE
+
+ptmpa = aggregate(pdea$tt[,-c(23,24)], by = list(Symbol = pgene.symbol), FUN = median) #Removing non numeric accession and symbol cols
+#tmp = aggregate(de$tt[,-c(11,12)], by = list(Symbol = gene.symbol), FUN = median) #Removing non numeric accession and symbol cols
+
+head(ptmpa)
+head(pdea$tt)
+head(pgene.symbol)
+
+ptmpa$Accession = pdea$tt$Accession[match(ptmpa$Symbol, pgene.symbol)] # Get the first listed Accession ID for each gene symbol
+#tmp$Accession = de$tt$Accession[match(tmp$Symbol, gene.symbol)] # Get the first listed Accession ID for each gene symbol
+head(ptmpa$Accession)
+head(ptmpa)
+head(pdea$tt)
+nrow(ptmpa) #[1] 12289 agrregated duplicates based on median
+nrow(pdea$tt) #[1] 12298
+
+pmappingde %>% 
+  dplyr::filter(Symbol  == "AAAS_S495")
+pmappingde %>% 
+  dplyr::filter(Symbol  == "AAK1_S249")
+ptmpa %>% 
+  dplyr::filter(Symbol  == "AAAS_S495")
+ptmpa %>% 
+  dplyr::filter(Symbol  == "AAK1_S249")
+#Matches with ptmpa
+
+#head(tmp$Accession)
+pdea$tt = ptmpa #Replacing with aggregated data (aggregated duplicates based on median)
+#de$tt = tmp
+head(pdea$tt)
+#head(de$tt)
+nrow(pdea$tt) #[1] 12289 #Replaced pdea$tt with aggregated ptmpa (median of dupliccte symbols)
+
+head(pdea$tt)
+head(ptmpa)
+nrow(pdea$tt) #[1] 12289
+nrow(ptmpa) #[1] 12289
+#Both match
+
+#================================================================================================================#
+#================================================================================================================#
+#----------------------------------------------------------------------------------------------------#
+#logFCPprot (Phospho-proteomics - if you need an excel sheet of the differentially expressed values
+#----------------------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------#
+#logFCprot (Proteomics - if you need an excel sheet of the differentially expressed values
+#------------------------------------------------------------------------------------------#
+#head(dea$tt)
+#logFCprot<-dea$tt
+#head(logFCprot)
+#logFCprot<-as.data.frame(logFCprot)
+#head(logFCprot)
+#type(logFCprot)
+#library("writexl") 
+###install.packages("writexl")
+###write_xlsx(logFCprot,"C:\\Users\\sophi\\OneDrive\\Desktop\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\logFCprot.xlsx")
+#dim(logFCprot)
+#head(de$tt)
+
+#----------------------------------------------------------------------------------------------------#
+#logFCPprot (Phospho-proteomics - if you need an excel sheet of the differentially expressed values
+#----------------------------------------------------------------------------------------------------#
+
+head(pdea$tt)
+nrow(pdea$tt) #[1] 12289
+logFCPprot<-pdea$tt
+head(logFCPprot)
+logFCPprot<-as.data.frame(logFCPprot)
+head(logFCPprot)
+type(logFCPprot)
+library("writexl") 
+#install.packages("writexl")
+#write_xlsx(logFCPprot,"C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\logFCPhospoprot.xlsx")
+dim(logFCPprot) #[1] 12289    24
+
+#============================================================================================================================================================================================#
+
+#==================================================#
+# Volcano plots for p-value and adjusted p-values
+#==================================================#
+
+#Final Code
+#==================================================#
+colnames(pdea$tt) #logFC and pvalues
+
+#==================#
+#GFPTEN.GFPCTRL
+#==================#
+
+rx <- c(-1, 1)*max(abs(pdea$tt$GFPTEN.GFPCTRL))*1.1 #log2FC
+ry <- c(0, ceiling(max(-log10(pdea$tt$P.Value.GFPTEN.GFPCTRL), -log10(pdea$tt$adj.P.Val.GFPTEN.GFPCTRL))))
+
+#https://biostatsquid.com/volcano-plot/
+
+#par(mfrow=c(1,2), font.lab=2, cex.lab=1.2, font.axis=2, cex.axis=1.2)
+#par(las=1, xaxs="i", yaxs="i")
+
+#-----------------#
+#p-value
+#-----------------#
+
+plot(pdea$tt$GFPTEN.GFPCTRL, -log10(pdea$tt$P.Value.GFPTEN.GFPCTRL), pch=21, bg="lightgrey", cex=0.9, 
+     xlim=rx, ylim=ry, xaxt="n",
+     xlab="Fold change", ylab="-log10 p-value")
+abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
+abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+axis(1, seq(-6,6,1))
+title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of p-values - GFP 10 min vs. GFP 0 min")
+
+# Log2 fold change and p-value cutoff
+lfc <- 0.58
+#lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+pval <- 0.05 
+-log10(pval)
+-log10(0.01)
+#>1.3 is good
+# Selecting interesting genes
+sigGenes1 <- ((pdea$tt$GFPTEN.GFPCTRL)> lfc & -log(pdea$tt$P.Value.GFPTEN.GFPCTRL,10) > -log10(pval))   
+sigGenes2 <- ((pdea$tt$GFPTEN.GFPCTRL)< (-lfc) & -log(pdea$tt$P.Value.GFPTEN.GFPCTRL,10) > -log10(pval))   
+# Identifying the selected genes
+points(pdea$tt[sigGenes1,]$GFPTEN.GFPCTRL,-log(pdea$tt[sigGenes1,]$P.Value.GFPTEN.GFPCTRL,10),pch=20,col="#BB1C1C",cex=2)
+points(pdea$tt[sigGenes2,]$GFPTEN.GFPCTRL,-log(pdea$tt[sigGenes2,]$P.Value.GFPTEN.GFPCTRL,10),pch=20,col="#648FFF",cex=2)
+abline(h=-log10(pval),col="brown4",lty=2)
+abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+#mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+
+#--------------------#
+#adjusted p value
+#--------------------#
+
+plot(pdea$tt$GFPTEN.GFPCTRL, -log10(pdea$tt$adj.P.Val.GFPTEN.GFPCTRL), pch=21, bg="lightgrey", cex=0.9, 
+     xlim=rx, ylim=ry, xaxt="n",
+     xlab="log2 fold change", ylab="-log10  p-value")
+abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
+abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+axis(1, seq(-6,6,1))
+title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of adjusted p-values - GFP 10 min vs. GFP 0 min")
+
+# Log2 fold change and p-value cutoff
+lfc <- 0.58
+#lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+pval <- 0.05 
+# Selecting interesting genes
+sigGenes1 <- ((pdea$tt$GFPTEN.GFPCTRL)> lfc & -log(pdea$tt$adj.P.Val.GFPTEN.GFPCTRL,10) > -log10(pval))   
+sigGenes2 <- ((pdea$tt$GFPTEN.GFPCTRL)< (-lfc) & -log(pdea$tt$adj.P.Val.GFPTEN.GFPCTRL,10) > -log10(pval))   
+# Identifying the selected genes
+points(pdea$tt[sigGenes1,]$GFPTEN.GFPCTRL,-log(pdea$tt[sigGenes1,]$adj.P.Val.GFPTEN.GFPCTRL,10),pch=20,col="#BB1C1C",cex=2)
+points(pdea$tt[sigGenes2,]$GFPTEN.GFPCTRL,-log(pdea$tt[sigGenes2,]$adj.P.Val.GFPTEN.GFPCTRL,10),pch=20,col="#648FFF",cex=2)
+abline(h=-log10(pval),col="brown4",lty=2)
+abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+#mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+# Keep lfc at 0.58 for the position, but use "1.5" for the text
+mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+#============================================================#
+#GFPTEN.GFPCTRL_Total proteomics (For Sample Calculation)
+#============================================================#
+
+#rx <- c(-1, 1)*max(abs(dea$tt$GFPTEN.GFPCTRL))*1.1 #log2FC
+#ry <- c(0, ceiling(max(-log10(dea$tt$P.Value.GFPTEN.GFPCTRL), -log10(dea$tt$adj.P.Val.GFPTEN.GFPCTRL))))
+
+###https://biostatsquid.com/volcano-plot/
+
+###par(mfrow=c(1,2), font.lab=2, cex.lab=1.2, font.axis=2, cex.axis=1.2)
+###par(las=1, xaxs="i", yaxs="i")
+
+#----------#
+#p-value
+#----------#
+#plot(dea$tt$GFPTEN.GFPCTRL, -log10(dea$tt$P.Value.GFPTEN.GFPCTRL), pch=21, bg="lightgrey", cex=0.9, 
+ #    xlim=rx, ylim=ry, xaxt="n",
+  #   xlab="Fold change", ylab="-log10 p-value")
+#abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
+#abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+#axis(1, seq(-6,6,1))
+#title("Volcano plot of p-values - GFP 10 min vs. GFP 0 min")
+
+### Log2 fold change and p-value cutoff
+#lfc <- 0.58
+###lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+#pval <- 0.05 
+#-log10(pval)
+#-log10(0.01)
+###>1.3 is good
+### Selecting interesting genes
+#sigGenes1 <- ((dea$tt$GFPTEN.GFPCTRL)> lfc & -log(dea$tt$P.Value.GFPTEN.GFPCTRL,10) > -log10(pval))   
+#sigGenes2 <- ((dea$tt$GFPTEN.GFPCTRL)< (-lfc) & -log(dea$tt$P.Value.GFPTEN.GFPCTRL,10) > -log10(pval))   
+### Identifying the selected genes
+#points(dea$tt[sigGenes1,]$GFPTEN.GFPCTRL,-log(dea$tt[sigGenes1,]$P.Value.GFPTEN.GFPCTRL,10),pch=20,col="#BB1C1C",cex=2)
+#points(dea$tt[sigGenes2,]$GFPTEN.GFPCTRL,-log(dea$tt[sigGenes2,]$P.Value.GFPTEN.GFPCTRL,10),pch=20,col="#648FFF",cex=2)
+#abline(h=-log10(pval),col="brown4",lty=2)
+#abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+#mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+###mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+#mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+
+#--------------------#
+#adjusted p value
+#--------------------#
+#plot(dea$tt$GFPTEN.GFPCTRL, -log10(dea$tt$adj.P.Val.GFPTEN.GFPCTRL), pch=21, bg="lightgrey", cex=0.9, 
+ #    xlim=rx, ylim=ry, xaxt="n",
+  #   xlab="log2 fold change", ylab="-log10  p-value")
+#abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
+#abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+#axis(1, seq(-6,6,1))
+#title("Volcano plot of adjusted p-values - GFP 10 min vs. GFP 0 min")
+
+### Log2 fold change and p-value cutoff
+#lfc <- 0.58
+###lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+#pval <- 0.05 
+### Selecting interesting genes
+#sigGenes1 <- ((dea$tt$GFPTEN.GFPCTRL)> lfc & -log(dea$tt$adj.P.Val.GFPTEN.GFPCTRL,10) > -log10(pval))   
+#sigGenes2 <- ((dea$tt$GFPTEN.GFPCTRL)< (-lfc) & -log(dea$tt$adj.P.Val.GFPTEN.GFPCTRL,10) > -log10(pval))   
+### Identifying the selected genes
+#points(dea$tt[sigGenes1,]$GFPTEN.GFPCTRL,-log(dea$tt[sigGenes1,]$adj.P.Val.GFPTEN.GFPCTRL,10),pch=20,col="#BB1C1C",cex=2)
+#points(dea$tt[sigGenes2,]$GFPTEN.GFPCTRL,-log(dea$tt[sigGenes2,]$adj.P.Val.GFPTEN.GFPCTRL,10),pch=20,col="#648FFF",cex=2)
+#abline(h=-log10(pval),col="brown4",lty=2)
+#abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+#mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+###mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+### Keep lfc at 0.58 for the position, but use "1.5" for the text
+#mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+
+#==================#
+#OGTTEN.OGTCTRL
+#==================#
+rx <- c(-1, 1)*max(abs(pdea$tt$OGTTEN.OGTCTRL))*1.1 #log2FC
+ry <- c(0, ceiling(max(-log10(pdea$tt$P.Value.OGTTEN.OGTCTRL), -log10(pdea$tt$adj.P.Val.OGTTEN.OGTCTRL))))
+
+#https://biostatsquid.com/volcano-plot/
+
+#par(mfrow=c(1,2), font.lab=2, cex.lab=1.2, font.axis=2, cex.axis=1.2)
+#par(las=1, xaxs="i", yaxs="i")
+
+#----------------------------#
+#p-value
+#----------------------------#
+plot(pdea$tt$OGTTEN.OGTCTRL, -log10(pdea$tt$P.Value.OGTTEN.OGTCTRL), pch=21, bg="lightgrey", cex=0.9, 
+     xlim=rx, ylim=ry, xaxt="n",
+     xlab="Fold change", ylab="-log10  p-value")
+abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
+abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+axis(1, seq(-6,6,1))
+title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of p-values - OGT KD 605-10 min vs. OGT KD 605-0 min")
+
+# Log2 fold change and p-value cutoff
+lfc <- 0.58
+#lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+pval <- 0.05 
+-log10(pval)
+-log10(0.01)
+#>1.3 is good
+# Selecting interesting genes
+sigGenes1 <- ((pdea$tt$OGTTEN.OGTCTRL)> lfc & -log(pdea$tt$P.Value.OGTTEN.OGTCTRL,10) > -log10(pval))   
+sigGenes2 <- ((pdea$tt$OGTTEN.OGTCTRL)< (-lfc) & -log(pdea$tt$P.Value.OGTTEN.OGTCTRL,10) > -log10(pval))   
+# Identifying the selected genes
+points(pdea$tt[sigGenes1,]$OGTTEN.OGTCTRL,-log(pdea$tt[sigGenes1,]$P.Value.OGTTEN.OGTCTRL,10),pch=20,col="#BB1C1C",cex=2)
+points(pdea$tt[sigGenes2,]$OGTTEN.OGTCTRL,-log(pdea$tt[sigGenes2,]$P.Value.OGTTEN.OGTCTRL,10),pch=20,col="#648FFF",cex=2)
+abline(h=-log10(pval),col="brown4",lty=2)
+abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+#mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+
+#----------------------------#
+#adjusted p value
+#----------------------------#
+plot(pdea$tt$OGTTEN.OGTCTRL, -log10(pdea$tt$adj.P.Val.OGTTEN.OGTCTRL), pch=21, bg="lightgrey", cex=0.9, 
+     xlim=rx, ylim=ry, xaxt="n",
+     xlab="log2 fold change", ylab="-log10  p-value")
+abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
+abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+axis(1, seq(-6,6,1))
+title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of adjusted p-values - OGT KD 605-10 min vs. OGT KD 605-0 min")
+
+# Log2 fold change and p-value cutoff
+lfc <- 0.58
+#lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+pval <- 0.05 
+# Selecting interesting genes
+sigGenes1 <- ((pdea$tt$OGTTEN.OGTCTRL)> lfc & -log(pdea$tt$adj.P.Val.OGTTEN.OGTCTRL,10) > -log10(pval))   
+sigGenes2 <- ((pdea$tt$OGTTEN.OGTCTRL)< (-lfc) & -log(pdea$tt$adj.P.Val.OGTTEN.OGTCTRL,10) > -log10(pval))   
+# Identifying the selected genes
+points(pdea$tt[sigGenes1,]$OGTTEN.OGTCTRL,-log(pdea$tt[sigGenes1,]$adj.P.Val.OGTTEN.OGTCTRL,10),pch=20,col="#BB1C1C",cex=2)
+points(pdea$tt[sigGenes2,]$OGTTEN.OGTCTRL,-log(pdea$tt[sigGenes2,]$adj.P.Val.OGTTEN.OGTCTRL,10),pch=20,col="#648FFF",cex=2)
+abline(h=-log10(pval),col="brown4",lty=2)
+abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+#mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+# Keep lfc at 0.58 for the position, but use "1.5" for the text
+mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+
+#======================#
+#ROGTTEN.ROGTCTRL
+#======================#
+
+colnames(pdea$tt)
+rx <- c(-1, 1)*max(abs(pdea$tt$ROGTTEN.ROGTCTRL))*1.1 #log2FC
+ry <- c(0, ceiling(max(-log10(pdea$tt$P.Value.ROGTTEN.ROGTCTRL), -log10(pdea$tt$adj.P.Val.ROGTTEN.ROGTCTRL))))
+
+#https://biostatsquid.com/volcano-plot/
+
+#par(mfrow=c(1,2), font.lab=2, cex.lab=1.2, font.axis=2, cex.axis=1.2)
+#par(las=1, xaxs="i", yaxs="i")
+
+#-----------------------------#
+#p-value
+#-----------------------------#
+plot(pdea$tt$ROGTTEN.ROGTCTRL, -log10(pdea$tt$P.Value.ROGTTEN.ROGTCTRL), pch=21, bg="lightgrey", cex=0.9, 
+     xlim=rx, ylim=ry, xaxt="n",
+     xlab="Fold change", ylab="-log10  p-value")
+abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
+abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+axis(1, seq(-6,6,1))
+title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of p-values - OGT KD 606-10 min vs. OGT KD 606-0 min")
+
+# Log2 fold change and p-value cutoff
+lfc <- 0.58
+#lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+pval <- 0.05 
+-log10(pval)
+-log10(0.01)
+#>1.3 is good
+# Selecting interesting genes
+sigGenes1 <- ((pdea$tt$ROGTTEN.ROGTCTRL)> lfc & -log(pdea$tt$P.Value.ROGTTEN.ROGTCTRL,10) > -log10(pval))   
+sigGenes2 <- ((pdea$tt$ROGTTEN.ROGTCTRL)< (-lfc) & -log(pdea$tt$P.Value.ROGTTEN.ROGTCTRL,10) > -log10(pval))   
+# Identifying the selected genes
+points(pdea$tt[sigGenes1,]$ROGTTEN.ROGTCTRL,-log(pdea$tt[sigGenes1,]$P.Value.ROGTTEN.ROGTCTRL,10),pch=20,col="#BB1C1C",cex=2)
+points(pdea$tt[sigGenes2,]$ROGTTEN.ROGTCTRL,-log(pdea$tt[sigGenes2,]$P.Value.ROGTTEN.ROGTCTRL,10),pch=20,col="#648FFF",cex=2)
+abline(h=-log10(pval),col="brown4",lty=2)
+abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+#mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+
+#-----------------------------#
+#adjusted p value
+#-----------------------------#
+plot(pdea$tt$ROGTTEN.ROGTCTRL, -log10(pdea$tt$adj.P.Val.ROGTTEN.ROGTCTRL), pch=21, bg="lightgrey", cex=0.9, 
+     xlim=rx, ylim=ry, xaxt="n",
+     xlab="log2 fold change", ylab="-log10  p-value")
+abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
+abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+axis(1, seq(-6,6,1))
+title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of adjusted p-values - OGT KD 606-10 min vs. OGT KD 606-0 min")
+
+# Log2 fold change and p-value cutoff
+lfc <- 0.58
+#lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+pval <- 0.05 
+# Selecting interesting genes
+sigGenes1 <- ((pdea$tt$ROGTTEN.ROGTCTRL)> lfc & -log(pdea$tt$adj.P.Val.ROGTTEN.ROGTCTRL,10) > -log10(pval))   
+sigGenes2 <- ((pdea$tt$ROGTTEN.ROGTCTRL)< (-lfc) & -log(pdea$tt$adj.P.Val.ROGTTEN.ROGTCTRL,10) > -log10(pval))   
+# Identifying the selected genes
+points(pdea$tt[sigGenes1,]$ROGTTEN.ROGTCTRL,-log(pdea$tt[sigGenes1,]$adj.P.Val.ROGTTEN.ROGTCTRL,10),pch=20,col="#BB1C1C",cex=2)
+points(pdea$tt[sigGenes2,]$ROGTTEN.ROGTCTRL,-log(pdea$tt[sigGenes2,]$adj.P.Val.ROGTTEN.ROGTCTRL,10),pch=20,col="#648FFF",cex=2)
+abline(h=-log10(pval),col="brown4",lty=2)
+abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+#mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+# Keep lfc at 0.58 for the position, but use "1.5" for the text
+mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+
+#=======================#
+#OGTCTRL.GFPCTRL
+#=======================#
+colnames(pdea$tt)
+rx <- c(-1, 1)*max(abs(pdea$tt$OGTCTRL.GFPCTRL))*1.1 #log2FC
+ry <- c(0, ceiling(max(-log10(pdea$tt$P.Value.OGTCTRL.GFPCTRL), -log10(pdea$tt$adj.P.Val.OGTCTRL.GFPCTRL))))
+
+#https://biostatsquid.com/volcano-plot/
+
+#par(mfrow=c(1,2), font.lab=2, cex.lab=1.2, font.axis=2, cex.axis=1.2)
+#par(las=1, xaxs="i", yaxs="i")
+
+#----------------------------#
+#p-value
+#----------------------------#
+
+plot(pdea$tt$OGTCTRL.GFPCTRL, -log10(pdea$tt$P.Value.OGTCTRL.GFPCTRL), pch=21, bg="lightgrey", cex=0.9, 
+     xlim=rx, ylim=ry, xaxt="n",
+     xlab="log2 Fold change", ylab="-log10  p-value")
+abline(v=seq(-2,2,1), col="lightgray", lty="dotted")
+abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+axis(1, seq(-2,2,1))
+title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of p-values - OGT KD 605-0 min vs. GFP 0 min")
+
+# Log2 fold change and p-value cutoff
+lfc <- 0.58
+#lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+pval <- 0.05 
+-log10(pval)
+-log10(0.01)
+#>1.3 is good
+# Selecting interesting genes
+sigGenes1 <- ((pdea$tt$OGTCTRL.GFPCTRL)> lfc & -log(pdea$tt$P.Value.OGTCTRL.GFPCTRL,10) > -log10(pval))   
+sigGenes2 <- ((pdea$tt$OGTCTRL.GFPCTRL)< (-lfc) & -log(pdea$tt$P.Value.OGTCTRL.GFPCTRL,10) > -log10(pval))   
+# Identifying the selected genes
+points(pdea$tt[sigGenes1,]$OGTCTRL.GFPCTRL,-log(pdea$tt[sigGenes1,]$P.Value.OGTCTRL.GFPCTRL,10),pch=20,col="#BB1C1C",cex=2)
+points(pdea$tt[sigGenes2,]$OGTCTRL.GFPCTRL,-log(pdea$tt[sigGenes2,]$P.Value.OGTCTRL.GFPCTRL,10),pch=20,col="#648FFF",cex=2)
+abline(h=-log10(pval),col="brown4",lty=2)
+abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+#mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+
+#----------------------------#
+#adjusted p value
+#----------------------------#
+
+plot(pdea$tt$OGTCTRL.GFPCTRL, -log10(pdea$tt$adj.P.Val.OGTCTRL.GFPCTRL), pch=21, bg="lightgrey", cex=0.9, 
+     xlim=rx, ylim=ry, xaxt="n",
+     xlab="log2 fold change", ylab="-log10  p-value")
+abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
+abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+axis(1, seq(-6,6,1))
+title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of adjusted p-values - OGT KD 605-0 min vs. GFP 0 min")
+
+# Log2 fold change and p-value cutoff
+lfc <- 0.58
+#lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+pval <- 0.05 
+# Selecting interesting genes
+sigGenes1 <- ((pdea$tt$OGTCTRL.GFPCTRL)> lfc & -log(pdea$tt$adj.P.Val.OGTCTRL.GFPCTRL,10) > -log10(pval))   
+sigGenes2 <- ((pdea$tt$OGTCTRL.GFPCTRL)< (-lfc) & -log(pdea$tt$adj.P.Val.OGTCTRL.GFPCTRL,10) > -log10(pval))   
+# Identifying the selected genes
+points(pdea$tt[sigGenes1,]$OGTCTRL.GFPCTRL,-log(pdea$tt[sigGenes1,]$adj.P.Val.OGTCTRL.GFPCTRL,10),pch=20,col="#BB1C1C",cex=2)
+points(pdea$tt[sigGenes2,]$OGTCTRL.GFPCTRL,-log(pdea$tt[sigGenes2,]$adj.P.Val.OGTCTRL.GFPCTRL,10),pch=20,col="#648FFF",cex=2)
+abline(h=-log10(pval),col="brown4",lty=2)
+abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+#mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+# Keep lfc at 0.58 for the position, but use "1.5" for the text
+mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+
+#-------------------------------------------------------------------------------------------------------------------------------------------#
+###Only p value cutoff and no lfc cutoff
+#lfc <- 0.58
+###lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+#pval <- 0.05 
+
+### Selecting interesting genes excluding logFC
+#sigGenes1 <- ((pdea$tt$OGTCTRL.GFPCTRL)> lfc & -log(pdea$tt$adj.P.Val.OGTCTRL.GFPCTRL,10) > -log10(pval))   
+#sigGenes2 <- ((pdea$tt$OGTCTRL.GFPCTRL)< (-lfc) & -log(pdea$tt$adj.P.Val.OGTCTRL.GFPCTRL,10) > -log10(pval))   
+### Identifying the selected genes
+#points(pdea$tt[sigGenes1,]$OGTCTRL.GFPCTRL,-log(pdea$tt[sigGenes1,]$adj.P.Val.OGTCTRL.GFPCTRL,10),pch=20,col="#BB1C1C",cex=2)
+#points(pdea$tt[sigGenes2,]$OGTCTRL.GFPCTRL,-log(pdea$tt[sigGenes2,]$adj.P.Val.OGTCTRL.GFPCTRL,10),pch=20,col="#648FFF",cex=2)
+#abline(h=-log10(pval),col="brown4",lty=2)
+###abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+#mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+###mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+### Keep lfc at 0.58 for the position, but use "1.5" for the text
+#mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+#-------------------------------------------------------------------------------------------------------------------------------------------#
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+
+#=======================================#
+#OGTTEN.GFPTEN
+#=======================================#
+colnames(pdea$tt)
+rx <- c(-1, 1)*max(abs(pdea$tt$OGTTEN.GFPTEN))*1.1 #log2FC
+ry <- c(0, ceiling(max(-log10(pdea$tt$P.Value.OGTTEN.GFPTEN), -log10(pdea$tt$adj.P.Val.OGTTEN.GFPTEN))))
+
+#https://biostatsquid.com/volcano-plot/
+
+#par(mfrow=c(1,2), font.lab=2, cex.lab=1.2, font.axis=2, cex.axis=1.2)
+#par(las=1, xaxs="i", yaxs="i")
+
+#---------------#
+#p-value
+#---------------#
+plot(pdea$tt$OGTTEN.GFPTEN, -log10(pdea$tt$P.Value.OGTTEN.GFPTEN), pch=21, bg="lightgrey", cex=0.9, 
+     xlim=rx, ylim=ry, xaxt="n",
+     xlab="Fold change", ylab="-log10  p-value")
+abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
+abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+axis(1, seq(-6,6,1))
+title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of p-values - OGT KD 605-10 min vs. GFP 10 min")
+
+# Log2 fold change and p-value cutoff
+lfc <- 0.58
+#lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+pval <- 0.05 
+-log10(pval)
+-log10(0.01)
+#>1.3 is good
+# Selecting interesting genes
+sigGenes1 <- ((pdea$tt$OGTTEN.GFPTEN)> lfc & -log(pdea$tt$P.Value.OGTTEN.GFPTEN,10) > -log10(pval))   
+sigGenes2 <- ((pdea$tt$OGTTEN.GFPTEN)< (-lfc) & -log(pdea$tt$P.Value.OGTTEN.GFPTEN,10) > -log10(pval))   
+# Identifying the selected genes
+points(pdea$tt[sigGenes1,]$OGTTEN.GFPTEN,-log(pdea$tt[sigGenes1,]$P.Value.OGTTEN.GFPTEN,10),pch=20,col="#BB1C1C",cex=2)
+points(pdea$tt[sigGenes2,]$OGTTEN.GFPTEN,-log(pdea$tt[sigGenes2,]$P.Value.OGTTEN.GFPTEN,10),pch=20,col="#648FFF",cex=2)
+abline(h=-log10(pval),col="brown4",lty=2)
+abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+#mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+
+#---------------------#
+#adjusted p value
+#---------------------#
+plot(pdea$tt$OGTTEN.GFPTEN, -log10(pdea$tt$adj.P.Val.OGTTEN.GFPTEN), pch=21, bg="lightgrey", cex=0.9, 
+     xlim=rx, ylim=ry, xaxt="n",
+     xlab="log2 fold change", ylab="-log10  p-value")
+abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
+abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+axis(1, seq(-6,6,1))
+title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of adjusted p-values - OGT KD 605-10 min vs. GFP 10 min")
+
+# Log2 fold change and p-value cutoff
+lfc <- 0.58
+#lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+pval <- 0.05 
+# Selecting interesting genes
+sigGenes1 <- ((pdea$tt$OGTTEN.GFPTEN)> lfc & -log(pdea$tt$adj.P.Val.OGTTEN.GFPTEN,10) > -log10(pval))   
+sigGenes2 <- ((pdea$tt$OGTTEN.GFPTEN)< (-lfc) & -log(pdea$tt$adj.P.Val.OGTTEN.GFPTEN,10) > -log10(pval))   
+# Identifying the selected genes
+points(pdea$tt[sigGenes1,]$OGTTEN.GFPTEN,-log(pdea$tt[sigGenes1,]$adj.P.Val.OGTTEN.GFPTEN,10),pch=20,col="#BB1C1C",cex=2)
+points(pdea$tt[sigGenes2,]$OGTTEN.GFPTEN,-log(pdea$tt[sigGenes2,]$adj.P.Val.OGTTEN.GFPTEN,10),pch=20,col="#648FFF",cex=2)
+abline(h=-log10(pval),col="brown4",lty=2)
+abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+#mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+# Keep lfc at 0.58 for the position, but use "1.5" for the text
+mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+
+#--------------------------------------------------------------------------------------------------------------------------#
+# only p-value cutoff and no lfc
+#lfc <- 0.58
+###lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+#pval <- 0.05 
+### Selecting interesting genes
+#sigGenes1 <- ((pdea$tt$OGTTEN.GFPTEN)> lfc & -log(pdea$tt$adj.P.Val.OGTTEN.GFPTEN,10) > -log10(pval))   
+#sigGenes2 <- ((pdea$tt$OGTTEN.GFPTEN)< (-lfc) & -log(pdea$tt$adj.P.Val.OGTTEN.GFPTEN,10) > -log10(pval))   
+### Identifying the selected genes
+#points(pdea$tt[sigGenes1,]$OGTTEN.GFPTEN,-log(pdea$tt[sigGenes1,]$adj.P.Val.OGTTEN.GFPTEN,10),pch=20,col="#BB1C1C",cex=2)
+#points(pdea$tt[sigGenes2,]$OGTTEN.GFPTEN,-log(pdea$tt[sigGenes2,]$adj.P.Val.OGTTEN.GFPTEN,10),pch=20,col="#648FFF",cex=2)
+#abline(h=-log10(pval),col="brown4",lty=2)
+###abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+#mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+###mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+#mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+#--------------------------------------------------------------------------------------------------------------------------#
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+
+#=========================#
+#ROGTCTRL.GFPCTRL
+#=========================#
+#If your input data was already log2 transformed, 
+#then the "Fold Change" you calculated is actually the log2 Fold Change
+colnames(pdea$tt)
+head(pdea$tt)
+rx <- c(-1, 1)*max(abs(pdea$tt$ROGTCTRL.GFPCTRL))*1.1 #log2FC
+ry <- c(0, ceiling(max(-log10(pdea$tt$P.Value.ROGTCTRL.GFPCTRL), -log10(pdea$tt$adj.P.Val.ROGTCTRL.GFPCTRL))))
+
+#https://biostatsquid.com/volcano-plot/
+
+#par(mfrow=c(1,2), font.lab=2, cex.lab=1.2, font.axis=2, cex.axis=1.2)
+#par(las=1, xaxs="i", yaxs="i")
+
+#----------------------#
+#p-value
+#----------------------#
+
+plot(pdea$tt$ROGTCTRL.GFPCTRL, -log10(pdea$tt$P.Value.ROGTCTRL.GFPCTRL), pch=21, bg="lightgrey", cex=0.9, 
+     xlim=rx, ylim=ry, xaxt="n",
+     xlab="Fold change", ylab="-log10  p-value")
+abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
+abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+axis(1, seq(-6,6,1))
+title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of p-values - OGT KD 606-0 min vs. GFP 0 min")
+
+# Log2 fold change and p-value cutoff
+lfc <- 0.58
+#lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+pval <- 0.05 
+-log10(pval)
+-log10(0.01)
+#>1.3 is good
+# Selecting interesting genes
+sigGenes1 <- ((pdea$tt$ROGTCTRL.GFPCTRL)> lfc & -log(pdea$tt$P.Value.ROGTCTRL.GFPCTRL,10) > -log10(pval))   
+sigGenes2 <- ((pdea$tt$ROGTCTRL.GFPCTRL)< (-lfc) & -log(pdea$tt$P.Value.ROGTCTRL.GFPCTRL,10) > -log10(pval))   
+# Identifying the selected genes
+points(pdea$tt[sigGenes1,]$ROGTCTRL.GFPCTRL,-log(pdea$tt[sigGenes1,]$P.Value.ROGTCTRL.GFPCTRL,10),pch=20,col="#BB1C1C",cex=2)
+points(pdea$tt[sigGenes2,]$ROGTCTRL.GFPCTRL,-log(pdea$tt[sigGenes2,]$P.Value.ROGTCTRL.GFPCTRL,10),pch=20,col="#648FFF",cex=2)
+abline(h=-log10(pval),col="brown4",lty=2)
+abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+#mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+
+#----------------------#
+#adjusted p value
+#----------------------#
+
+plot(pdea$tt$ROGTCTRL.GFPCTRL, -log10(pdea$tt$adj.P.Val.ROGTCTRL.GFPCTRL), pch=21, bg="lightgrey", cex=0.9, 
+     xlim=rx, ylim=ry, xaxt="n",
+     xlab="log2 Fold change", ylab="-log10  p-value")
+abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
+abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+axis(1, seq(-6,6,1))
+title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of adjusted p-values - OGT KD 606-0 min vs. GFP 0 min")
+
+# Log2 fold change and p-value cutoff
+lfc <- 0.58
+#lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+pval <- 0.05 
+# Selecting interesting genes
+sigGenes1 <- ((pdea$tt$ROGTCTRL.GFPCTRL)> lfc & -log(pdea$tt$adj.P.Val.ROGTCTRL.GFPCTRL,10) > -log10(pval))   
+sigGenes2 <- ((pdea$tt$ROGTCTRL.GFPCTRL)< (-lfc) & -log(pdea$tt$adj.P.Val.ROGTCTRL.GFPCTRL,10) > -log10(pval))   
+# Identifying the selected genes
+points(pdea$tt[sigGenes1,]$ROGTCTRL.GFPCTRL,-log(pdea$tt[sigGenes1,]$adj.P.Val.ROGTCTRL.GFPCTRL,10),pch=20,col="#BB1C1C",cex=2)
+points(pdea$tt[sigGenes2,]$ROGTCTRL.GFPCTRL,-log(pdea$tt[sigGenes2,]$adj.P.Val.ROGTCTRL.GFPCTRL,10),pch=20,col="#648FFF",cex=2)
+abline(h=-log10(pval),col="brown4",lty=2)
+abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+#mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+# Keep lfc at 0.58 for the position, but use "1.5" for the text
+mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+
+#The antilog of 0.58 (in base 2) is 1.5.
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+
+#================================#
+#ROGTTEN.GFPTEN
+#================================#
+colnames(pdea$tt)
+rx <- c(-1, 1)*max(abs(pdea$tt$ROGTTEN.GFPTEN))*1.1 #log2FC
+ry <- c(0, ceiling(max(-log10(pdea$tt$P.Value.ROGTTEN.GFPTEN), -log10(pdea$tt$adj.P.Val.ROGTTEN.GFPTEN))))
+
+#https://biostatsquid.com/volcano-plot/
+
+#par(mfrow=c(1,2), font.lab=2, cex.lab=1.2, font.axis=2, cex.axis=1.2)
+#par(las=1, xaxs="i", yaxs="i")
+
+#---------------------------#
+#p-value
+#---------------------------#
+
+plot(pdea$tt$ROGTTEN.GFPTEN, -log10(pdea$tt$P.Value.ROGTTEN.GFPTEN), pch=21, bg="lightgrey", cex=0.9, 
+     xlim=rx, ylim=ry, xaxt="n",
+     xlab="Fold change", ylab="-log10  p-value")
+abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
+abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+axis(1, seq(-6,6,1))
+title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of p-values -  OGT KD 606-10 min vs. GFP 10 min")
+
+# Log2 fold change and p-value cutoff
+lfc <- 0.58
+#lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+pval <- 0.05 
+-log10(pval)
+-log10(0.01)
+#>1.3 is good
+# Selecting interesting genes
+sigGenes1 <- ((pdea$tt$ROGTTEN.GFPTEN)> lfc & -log(pdea$tt$P.Value.ROGTTEN.GFPTEN,10) > -log10(pval))   
+sigGenes2 <- ((pdea$tt$ROGTTEN.GFPTEN)< (-lfc) & -log(pdea$tt$P.Value.ROGTTEN.GFPTEN,10) > -log10(pval))   
+# Identifying the selected genes
+points(pdea$tt[sigGenes1,]$ROGTTEN.GFPTEN,-log(pdea$tt[sigGenes1,]$P.Value.ROGTTEN.GFPTEN,10),pch=20,col="#BB1C1C",cex=2)
+points(pdea$tt[sigGenes2,]$ROGTTEN.GFPTEN,-log(pdea$tt[sigGenes2,]$P.Value.ROGTTEN.GFPTEN,10),pch=20,col="#648FFF",cex=2)
+abline(h=-log10(pval),col="brown4",lty=2)
+abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+#mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+
+#---------------------------#
+#adjusted p value
+#---------------------------#
+
+plot(pdea$tt$ROGTTEN.GFPTEN, -log10(pdea$tt$adj.P.Val.ROGTTEN.GFPTEN), pch=21, bg="lightgrey", cex=0.9, 
+     xlim=rx, ylim=ry, xaxt="n",
+     xlab="log2 fold change", ylab="-log10  p-value")
+abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
+abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
+axis(1, seq(-6,6,1))
+title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of adjusted p-values -  OGT KD 606-10 min vs. GFP 10 min")
+
+# Log2 fold change and p-value cutoff
+lfc <- 0.58
+#lfc=expression in 10 min/expression in 0 min; 5/5=1; 10/5=2
+pval <- 0.05 
+# Selecting interesting genes
+sigGenes1 <- ((pdea$tt$ROGTTEN.GFPTEN)> lfc & -log(pdea$tt$adj.P.Val.ROGTTEN.GFPTEN,10) > -log10(pval))   
+sigGenes2 <- ((pdea$tt$ROGTTEN.GFPTEN)< (-lfc) & -log(pdea$tt$adj.P.Val.ROGTTEN.GFPTEN,10) > -log10(pval))   
+# Identifying the selected genes
+points(pdea$tt[sigGenes1,]$ROGTTEN.GFPTEN,-log(pdea$tt[sigGenes1,]$adj.P.Val.ROGTTEN.GFPTEN,10),pch=20,col="#BB1C1C",cex=2)
+points(pdea$tt[sigGenes2,]$ROGTTEN.GFPTEN,-log(pdea$tt[sigGenes2,]$adj.P.Val.ROGTTEN.GFPTEN,10),pch=20,col="#648FFF",cex=2)
+abline(h=-log10(pval),col="brown4",lty=2)
+abline(v=c(-lfc,lfc),col="deeppink2",lty=2)
+mtext(paste("pval = ",round(pval,2)), side=2,at=-log10(pval),cex=0.8,line=0.5,las=1)
+#mtext(c(paste("-",lfc,"fold"),paste("+",lfc,"fold")),side=3,at=c(-lfc,lfc),cex=1,line=0.2)
+mtext(c("- 1.5 fold", "+ 1.5 fold"), side = 3, at = c(-0.58, 0.58), cex = 1, line = 0.2)
+
+#========================================================================================================================================================================================#
+
+#------------------------------------------------------------#
+#Prep for Downstream Analysis, Waterfall Plot Heatmap, GSEA
+#------------------------------------------------------------#
+
+#-----------------------------------#
+#OGT KD 605 10 min vs GFP 10 min
+#-----------------------------------#
+
+pdea
+pdea2<-pdea
+#dea2 <- estimateDisp(dea2)-didnt work	  ## Calculates genewise dispersion parameter adjusted using bayesian empirical method(Recommended, edgeR)
+#dat.filtered$samples$lib.size <- colSums(dat.filtered$counts)
+#dat.filtered
+### PLOTS 
+#summary(de <- decideTestsDGE(dea2$tt, p=0.05, adjust="BH"))
+pdea$tt
+head(pdea2)
+pdea2$tt
+head(pdea2$tt)
+dim(pdea2$tt)
+updownOGTTENGFPTEN<-cbind(pdea2$tt$OGTTEN.GFPTEN,pdea2$tt$adj.P.Val.OGTTEN.GFPTEN,pdea2$tt$Symbol)
+head(updownOGTTENGFPTEN)
+head(pdea2$tt)
+updownOGTTENGFPTEN<-as.data.frame(updownOGTTENGFPTEN)
+colnames(updownOGTTENGFPTEN)<-c('logFC.OGTTEN.GFPTEN','adj.P.Val.OGTTEN.GFPTEN','Symbol')
+head(updownOGTTENGFPTEN)
+rownames(updownOGTTENGFPTEN)<-updownOGTTENGFPTEN$Symbol
+head(updownOGTTENGFPTEN)
+updownOGTTENGFPTEN<-updownOGTTENGFPTEN[,-3]
+head(updownOGTTENGFPTEN)
+updownOGTTENGFPTEN<-as.data.frame(updownOGTTENGFPTEN)
+head(updownOGTTENGFPTEN)
+#convert e to nmeric so can sort
+updownOGTTENGFPTEN$adj.P.Val.OGTTEN.GFPTEN <- as.numeric(formatC(updownOGTTENGFPTEN$adj.P.Val.OGTTEN.GFPTEN, format = "e", digits = 2))
+head(updownOGTTENGFPTEN)
+sortupdownOGTTENGFPTEN<-as.data.frame(updownOGTTENGFPTEN[order(updownOGTTENGFPTEN$adj.P.Val.OGTTEN.GFPTEN,decreasing = TRUE),]) 
+head(sortupdownOGTTENGFPTEN)
+tail(sortupdownOGTTENGFPTEN)
+
+#-----------------------------------#
+#OGT KD 606 10 min vs GFP 10 min
+#-----------------------------------#
+
+pdea
+pdea2<-pdea
+#pdea2 <- estimateDisp(pdea2)-didnt work	  ## Calculates genewise dispersion parameter adjusted using bayesian empirical method(Recommended, edgeR)
+#dat.filtered$samples$lib.size <- colSums(dat.filtered$counts)
+#dat.filtered
+### PLOTS 
+#summary(de <- decideTestsDGE(pdea2$tt, p=0.05, adjust="BH"))
+pdea$tt
+head(pdea2)
+pdea2$tt
+head(pdea2$tt)
+updownROGTTENGFPTEN<-cbind(pdea2$tt$ROGTTEN.GFPTEN,pdea2$tt$adj.P.Val.ROGTTEN.GFPTEN,pdea2$tt$Symbol)
+head(updownROGTTENGFPTEN)
+head(pdea2$tt)
+head(updownROGTTENGFPTEN)
+updownROGTTENGFPTEN<-as.data.frame(updownROGTTENGFPTEN)
+head(updownROGTTENGFPTEN)
+colnames(updownROGTTENGFPTEN)<-c('logFC.ROGTTEN.GFPTEN','adj.P.Val.ROGTTEN.GFPTEN','Symbol')
+head(updownROGTTENGFPTEN)
+rownames(updownROGTTENGFPTEN)<-updownROGTTENGFPTEN$Symbol
+head(updownROGTTENGFPTEN)
+updownROGTTENGFPTEN<-updownROGTTENGFPTEN[,-3]
+head(updownROGTTENGFPTEN)
+updownROGTTENGFPTEN<-as.data.frame(updownROGTTENGFPTEN)
+head(updownROGTTENGFPTEN)
+#convert e to nmeric so can sort
+updownROGTTENGFPTEN$adj.P.Val.ROGTTEN.GFPTEN <- as.numeric(formatC(updownROGTTENGFPTEN$adj.P.Val.ROGTTEN.GFPTEN, format = "e", digits = 2))
+head(updownROGTTENGFPTEN)
+type(updownROGTTENGFPTEN)
+updownROGTTENGFPTEN$logFC.ROGTTEN.GFPTEN <- as.numeric(formatC(updownROGTTENGFPTEN$logFC.ROGTTEN.GFPTEN, format = "e", digits = 2))
+head(updownROGTTENGFPTEN)
+type(updownROGTTENGFPTEN)
+sortupdownROGTTENGFPTEN<-as.data.frame(updownROGTTENGFPTEN[order(updownROGTTENGFPTEN$logFC.ROGTTEN.GFPTEN,decreasing = TRUE),]) 
+#Descending=big to small (eg. 10 to 1)
+head(sortupdownROGTTENGFPTEN)
+tail(sortupdownROGTTENGFPTEN)
+
+#========================================================================================================================================================================================#
+
+#NOT NEEDED FOR GSEA BUT CAN DO FOR KEGG AND GO
+#remove genes not significant p>0.05 
+#OGTKD 605 10 MIN VS GFP 10 MIN
+remsortupdownOGTTENGFPTEN <- sortupdownOGTTENGFPTEN[!(sortupdownOGTTENGFPTEN$adj.P.Val.OGTTEN.GFPTEN>0.045), ]
+head(remsortupdownOGTTENGFPTEN)
+remsortupdownOGTTENGFPTEN<-as.data.frame(remsortupdownOGTTENGFPTEN)
+head(remsortupdownOGTTENGFPTEN)
+dim(remsortupdownOGTTENGFPTEN)
+#3770 phospho-proteins < p=0.05 and FDR Filtration 
+
+#OGTKD 606 10 MIN VS GFP 10 MIN
+remsortupdownROGTTENGFPTEN <- sortupdownROGTTENGFPTEN[!(sortupdownROGTTENGFPTEN$adj.P.Val.ROGTTEN.GFPTEN>0.045), ]
+head(remsortupdownROGTTENGFPTEN)
+remsortupdownROGTTENGFPTEN<-as.data.frame(remsortupdownROGTTENGFPTEN)
+head(remsortupdownROGTTENGFPTEN)
+dim(remsortupdownROGTTENGFPTEN)
+#[1] 5909    2 < p=0.05 and FDR Filtration 
+
+#----------------------------#
+# Filter log FC > 0.58
+#----------------------------#
+
+#OGT kd 605 10min vs GFP 10 min
+
+head(remsortupdownOGTTENGFPTEN)
+logFCgreat<-remsortupdownOGTTENGFPTEN
+head(logFCgreat)
+logFCgreat<-as.data.frame(logFCgreat)
+#logFCgreat<-logFCgreat[,-2]
+head(logFCgreat)
+dim(logFCgreat) #3650    2
+logFCgreat<-subset(logFCgreat,(logFCgreat$logFC.OGTTEN.GFPTEN)>0.58)
+head(logFCgreat)
+dim(logFCgreat)
+#[1] 1376    2
+
+logFCless<-remsortupdownOGTTENGFPTEN
+head(logFCless)
+logFCless<-as.data.frame(logFCless)
+head(logFCless)
+type(logFCless)
+#logFCless<-as.numeric(logFCless$logFC.OGTTEN.GFPTEN)
+#head(logFCless)
+logFCless <- transform(logFCless, logFC.OGTTEN.GFPTEN = as.numeric(logFC.OGTTEN.GFPTEN))
+head(logFCless)
+type(logFCless)
+dim(logFCless)
+#[1] 3770    2
+#logFCless<-subset(logFCless,(((logFCless$logFC.OGTTEN.GFPTEN)<(-1.5))&((logFCless$logFC.OGTTEN.GFPTEN)>(1.5))))
+logFCless<-subset(logFCless,(((logFCless$logFC.OGTTEN.GFPTEN)<(-0.58))))
+dim(logFCless)
+#[1] 1108   2
+dim(logFCgreat)
+#[1] 1376    2
+
+#---------------------------------#
+#OGT KD 606 10 min vs GFP 10 min
+#---------------------------------#
+
+logFCgreat2<-remsortupdownROGTTENGFPTEN
+head(logFCgreat2)
+logFCgreat2<-as.data.frame(logFCgreat2)
+head(logFCgreat2)
+type(logFCgreat2)
+#logFCgreat<-as.numeric(logFCgreat$logFC.OGTTEN.GFPTEN)
+#head(logFCgreat)
+logFCgreat2 <- transform(logFCgreat2, logFC.ROGTTEN.GFPTEN = as.numeric(logFC.ROGTTEN.GFPTEN))
+head(logFCgreat2)
+type(logFCgreat2)
+dim(logFCgreat2)
+#5909   2
+#logFCgreat<-subset(logFCgreat,(((logFCgreat$logFC.OGTTEN.GFPTEN)<(-1.5))&((logFCgreat$logFC.OGTTEN.GFPTEN)>(1.5))))
+logFCgreat2<-subset(logFCgreat2,(((logFCgreat2$logFC.ROGTTEN.GFPTEN)>(0.58))))
+dim(logFCgreat2)
+#2315   2
+
+head(logFCgreat)#605
+dim(logFCgreat) #[1] 1376    2
+head(logFCgreat2)#606
+dim(logFCgreat2) #[1] 2315    2
+
+logFCless2<-remsortupdownROGTTENGFPTEN
+head(logFCless2)
+logFCless2<-as.data.frame(logFCless2)
+head(logFCless2)
+type(logFCless2)
+#logFCless<-as.numeric(logFCless$logFC.OGTTEN.GFPTEN)
+#head(logFCless)
+logFCless2 <- transform(logFCless2, logFC.ROGTTEN.GFPTEN = as.numeric(logFC.ROGTTEN.GFPTEN))
+head(logFCless2)
+type(logFCless2)
+dim(logFCless2)
+#[1] 5909    2
+#logFCless<-subset(logFCless,(((logFCless$logFC.OGTTEN.GFPTEN)<(-1.5))&((logFCless$logFC.OGTTEN.GFPTEN)>(1.5))))
+logFCless2<-subset(logFCless2,(((logFCless2$logFC.ROGTTEN.GFPTEN)<(-0.58))))
+dim(logFCless2)
+#[1] 1838    2
+dim(logFCgreat2) #[1] 2315    2
+
+#Prepare protlist for waterfall plot
+
+# Prepare the gene list
+#gene.list <- d.tmp$logFC             # rank-ordered gene list
+#head(pdea$tt)
+#names(gene.list) <- d.tmp$hgnc_symbol
+#head(gene.list)
+
+#GSEA 606 PROT LIST
+head(sortupdownROGTTENGFPTEN)
+prot.list <- sortupdownROGTTENGFPTEN$logFC.ROGTTEN.GFPTEN             # rank-ordered gene list
+head(prot.list)
+prot.list<-as.numeric(prot.list)
+head(prot.list)
+head(sortupdownROGTTENGFPTEN)
+names(prot.list) <- rownames(sortupdownROGTTENGFPTEN)
+head(prot.list)
+
+#GSEA 605 PROT LIST
+head(sortupdownOGTTENGFPTEN)
+prot.list2 <- sortupdownOGTTENGFPTEN$logFC.OGTTEN.GFPTEN             # rank-ordered gene list
+head(prot.list2)
+prot.list2<-as.numeric(prot.list2)
+head(prot.list2)
+head(sortupdownOGTTENGFPTEN)
+names(prot.list2) <- rownames(sortupdownOGTTENGFPTEN)
+head(prot.list2)
+
+#=============================================================================================#
+#-------------------------------------------------------#
+# Waterfall plot - Plot of ranked Fold changes
+#-------------------------------------------------------#
+
+# Barplot of ranked fold changes (waterfall plot)
+#barplot(sort(gene.list, decreasing = T),axisnames=FALSE,main="Plot of ranked gene Fold changes")
+
+head(prot.list)#606
+head(prot.list2)#605
+col <- ifelse(prot.list >0, "#BB1C1C", "#648FFF")
+
+#-------------------------------------------------------#
+#OGT KD 606 10 min vs GFP 10 min
+#-------------------------------------------------------#
+
+barplot(sort(prot.list, decreasing = T),axisnames=FALSE,main="Plot of ranked Fold changes of Phosphoproteome - OGT KD - 606 10 min vs. GFP - 10 min",  col=col, border=col, ylim=c(-4,4))
+
+#-------------------------------------------------------#
+#OGT KD 605 10 min vs GFP 10 min
+#-------------------------------------------------------#
+
+barplot(sort(prot.list2, decreasing = T),axisnames=FALSE,main="Plot of ranked Fold changes of Phosphoproteome - OGT KD - 605 10 min vs. GFP - 10 min", col=col, border=col, ylim=c(-4,4))
+
+#points(pdea$tt[sigGenes1,]$ROGTTEN.GFPTEN,-log(pdea$tt[sigGenes1,]$adj.P.Val.ROGTTEN.GFPTEN,10),pch=20,col="#BB1C1C",cex=2)
+#points(pdea$tt[sigGenes2,]$ROGTTEN.GFPTEN,-log(pdea$tt[sigGenes2,]$adj.P.Val.ROGTTEN.GFPTEN,10),pch=20,col="#648FFF",cex=2)
+
+#barplot(lib.size,xaxt="n",xlab="Study samples",ylab="Library size values",main="Barplot of library size",
+#       col=c(rep("red",3),rep("blue",3),rep("darkgreen",3),rep("green",3),rep("purple",3),rep("orange",3)),sub="(Red line represents mean)")
+#abline(h=mean(lib.size),lwd=2,col="red")
+#legend("bottomright", title="Treatment",legend=c("GFP-0","GFP-10","OGTKD-605-0","OGTKD-605-10","OGTKD-606-0","OGTKD-606-10"), fill=fill)
+
+#=================================================================================================================================================================================#
+
+#========================#
+#J_HEATMAP
+#========================#
+
+#--------------------------------#
+#OGT KD 606 10 MIN VS GFP 10 MIN
+#--------------------------------#
+
+head(prot.list)
+head(sortupdownROGTTENGFPTEN)
+
+# 1. Filter for adjusted p-value < 0.05
+sig_only <- sortupdownROGTTENGFPTEN[sortupdownROGTTENGFPTEN$adj.P.Val.ROGTTEN.GFPTEN < 0.045, ]
+# Sort sig_only so the highest LogFC values are at the top
+
+# 2. Get top 20 Up of sorted list
+top_20_up_all <- sig_only[order(as.numeric(sig_only$logFC.ROGTTEN.GFPTEN), decreasing = TRUE),]
+head(top_20_up_all)
+top_20_up <- head(top_20_up_all, 20)
+top_20_up
+# 3. Get top 20 Down (Bottom of the list)
+top_20_down_all <- sig_only[order(as.numeric(sig_only$logFC.ROGTTEN.GFPTEN), decreasing = FALSE),]
+head(top_20_down_all)
+top_20_down <- head(top_20_down_all, 20)
+top_20_down
+nrow(top_20_down)#20
+# 4. Combine them
+heatmap_df <- rbind(top_20_up, top_20_down)
+heatmap_df
+plot_mat <- matrix(c(as.numeric(heatmap_df$logFC.ROGTTEN.GFPTEN), 
+                     as.numeric(heatmap_df$adj.P.Val.ROGTTEN.GFPTEN)), 
+                   ncol = 2)
+head(plot_mat)
+colnames(plot_mat) <- c("LogFC", "Significance")
+rownames(plot_mat) <- rownames(heatmap_df)
+plot_mat
+
+# 1. Create an empty matrix with the correct dimensions
+display_mat <- matrix("", nrow = nrow(plot_mat), ncol = ncol(plot_mat))
+display_mat
+# 2. Fill the first column (LogFC)
+display_mat[, 1] <- as.character(round(plot_mat[, 1], 2))
+
+#plot_mat[, 1]: This looks at the first column of your numeric data matrix (plot_mat).
+#round(..., 2): It rounds those numbers to 2 decimal places (e.g., 0.12345 becomes 0.12).
+#as.character(...): It converts those numbers into text (strings). In R, you can't display actual numbers inside a pheatmap cell unless they are treated as text labels.
+#display_mat[, 1] <-: It saves these rounded text labels into the first column of a new matrix called display_mat.
+
+display_mat
+
+# 3. Fill the second column (Significance) 
+display_mat[, 2] <- formatC(plot_mat[, 2], format = "e", digits = 2)
+
+display_mat
+
+# 1. Create a matrix for colors where both columns ARE the LogFC
+color_mat <- cbind(plot_mat[, 1], plot_mat[, 1]) 
+color_mat
+
+# 2. Creating the Heatmap
+
+#pheatmap(color_mat, 
+#        cluster_cols = FALSE, 
+#       cluster_rows = TRUE,
+#      display_numbers = display_mat,  # Shows the text you want
+#     number_color = "black",
+#    color = colorRampPalette(c("#648FFF", "white", "#BB1C1C"))(256),
+#   # Center the scale so 0 is white
+#         breaks = seq(-max(abs(plot_mat[,1])), max(abs(plot_mat[,1])), length.out = 257),
+#        labels_col = c(expression(bold("LogFC")), expression(bold("Adj. P-Value"))),
+#       angle_col = 0,  # 0 degrees = perfectly horizontal
+#      main = ("Phosphoproteomics Heatmap - OGT KD 605 10 min. vs. GFP 10 min."))
+
+library(pheatmap)
+pheatmap(color_mat, 
+         cluster_cols = FALSE, 
+         cluster_rows = TRUE, 
+         # This function reorders the branches by LogFC values
+         clustering_callback = function(hc, mat){
+           # Calculate weights based on the first column (LogFC)
+           wts <- mat[,1] 
+           # Reorder the dendrogram: decreasing = TRUE puts high values at the top
+           dend <- stats::reorder(stats::as.dendrogram(hc), wts = wts, agglo.FUN = mean)
+           # Reversing may be needed depending on default orientation
+           stats::as.hclust(rev(dend)) 
+         },
+         display_numbers = display_mat, 
+         number_color = "black", 
+         color = colorRampPalette(c("#648FFF", "white", "#BB1C1C"))(256), 
+         breaks = seq(-max(abs(plot_mat[,1])), max(abs(plot_mat[,1])), length.out = 257), 
+         labels_col = c(expression(bold("LogFC")), expression(bold("Adj. P-Value"))), 
+         angle_col = 0, 
+         main = "Phosphoproteomics Heatmap post normalization to total proteome - OGT KD 606 10 min. vs. GFP 10 min.")
+
+#agglo.FUN = mean: This ensures that each cluster's position is determined by the average LogFC of all rows within that cluster.
+#rev(dend): While reorder typically sorts ascending, wrapping it in rev() ensures your dark maroon (highest positive) values land at the top of the plot.
+#Maintenance of Clusters: This method only "swaps" branches at their shared nodes. It will never break a cluster, but it will ensure the "heavier" (redder) clusters are positioned at the top. 
+#Biostars
+#Biostars
+
+#--------------------------------#
+#OGT KD 605 10 MIN VS GFP 10 MIN
+#--------------------------------#
+
+head(prot.list2)
+head(sortupdownOGTTENGFPTEN)
+
+# 1. Filter for adjusted p-value < 0.05
+sig_only <- sortupdownOGTTENGFPTEN[sortupdownOGTTENGFPTEN$adj.P.Val.OGTTEN.GFPTEN < 0.045, ]
+# Sort sig_only so the highest LogFC values are at the top
+
+# 2. Get top 20 Up of sorted list
+top_20_up_all <- sig_only[order(as.numeric(sig_only$logFC.OGTTEN.GFPTEN), decreasing = TRUE),]
+head(top_20_up_all)
+top_20_up <- head(top_20_up_all, 20)
+top_20_up
+# 3. Get top 20 Down (Bottom of the list)
+top_20_down_all <- sig_only[order(as.numeric(sig_only$logFC.OGTTEN.GFPTEN), decreasing = FALSE),]
+head(top_20_down_all)
+top_20_down <- head(top_20_down_all, 20)
+top_20_down
+nrow(top_20_down)#20
+# 4. Combine them
+heatmap_df <- rbind(top_20_up, top_20_down)
+heatmap_df
+plot_mat <- matrix(c(as.numeric(heatmap_df$logFC.OGTTEN.GFPTEN), 
+                     as.numeric(heatmap_df$adj.P.Val.OGTTEN.GFPTEN)), 
+                   ncol = 2)
+head(plot_mat)
+colnames(plot_mat) <- c("LogFC", "Significance")
+rownames(plot_mat) <- rownames(heatmap_df)
+plot_mat
+
+# 1. Create an empty matrix with the correct dimensions
+display_mat <- matrix("", nrow = nrow(plot_mat), ncol = ncol(plot_mat))
+display_mat
+# 2. Fill the first column (LogFC)
+display_mat[, 1] <- as.character(round(plot_mat[, 1], 2))
+
+#plot_mat[, 1]: This looks at the first column of your numeric data matrix (plot_mat).
+#round(..., 2): It rounds those numbers to 2 decimal places (e.g., 0.12345 becomes 0.12).
+#as.character(...): It converts those numbers into text (strings). In R, you can't display actual numbers inside a pheatmap cell unless they are treated as text labels.
+#display_mat[, 1] <-: It saves these rounded text labels into the first column of a new matrix called display_mat.
+
+display_mat
+
+# 3. Fill the second column (Significance) 
+display_mat[, 2] <- formatC(plot_mat[, 2], format = "e", digits = 2)
+
+display_mat
+
+# 1. Create a matrix for colors where both columns ARE the LogFC
+color_mat <- cbind(plot_mat[, 1], plot_mat[, 1]) 
+color_mat
+
+# 2. Creating the Heatmap
+
+#pheatmap(color_mat, 
+ #        cluster_cols = FALSE, 
+  #       cluster_rows = TRUE,
+   #      display_numbers = display_mat,  # Shows the text you want
+    #     number_color = "black",
+     #    color = colorRampPalette(c("#648FFF", "white", "#BB1C1C"))(256),
+      #   # Center the scale so 0 is white
+#         breaks = seq(-max(abs(plot_mat[,1])), max(abs(plot_mat[,1])), length.out = 257),
+ #        labels_col = c(expression(bold("LogFC")), expression(bold("Adj. P-Value"))),
+  #       angle_col = 0,  # 0 degrees = perfectly horizontal
+   #      main = ("Phosphoproteomics Heatmap - OGT KD 605 10 min. vs. GFP 10 min."))
+
+
+pheatmap(color_mat, 
+         cluster_cols = FALSE, 
+         cluster_rows = TRUE, 
+         # This function reorders the branches by LogFC values
+         clustering_callback = function(hc, mat){
+           # Calculate weights based on the first column (LogFC)
+           wts <- mat[,1] 
+           # Reorder the dendrogram: decreasing = TRUE puts high values at the top
+           dend <- stats::reorder(stats::as.dendrogram(hc), wts = wts, agglo.FUN = mean)
+           # Reversing may be needed depending on default orientation
+           stats::as.hclust(rev(dend)) 
+         },
+         display_numbers = display_mat, 
+         number_color = "black", 
+         color = colorRampPalette(c("#648FFF", "white", "#BB1C1C"))(256), 
+         breaks = seq(-max(abs(plot_mat[,1])), max(abs(plot_mat[,1])), length.out = 257), 
+         labels_col = c(expression(bold("LogFC")), expression(bold("Adj. P-Value"))), 
+         angle_col = 0, 
+         main = "Phosphoproteomics Heatmap post normalization to total proteome - OGT KD 605 10 min. vs. GFP 10 min.")
+
+#agglo.FUN = mean: This ensures that each cluster's position is determined by the average LogFC of all rows within that cluster.
+#rev(dend): While reorder typically sorts ascending, wrapping it in rev() ensures your dark maroon (highest positive) values land at the top of the plot.
+#Maintenance of Clusters: This method only "swaps" branches at their shared nodes. It will never break a cluster, but it will ensure the "heavier" (redder) clusters are positioned at the top. 
+#Biostars
+#Biostars
 
