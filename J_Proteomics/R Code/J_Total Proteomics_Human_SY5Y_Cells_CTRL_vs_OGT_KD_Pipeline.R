@@ -41,14 +41,6 @@ dim(dat1)
 
 #add_symbols - adds symbols to refseq id and removes duplicates
 #We already have symbols
-#Remove duplicates
-d <- duplicated(dat1$Symbol)
-head(d)
-dat1 <- dat1[!d,]
-nrow(dat1)
-dim(dat1)
-
-#[1] 9206   20 after removing duplicates ##24 with description, removed duplicates
 
 head(dat1) #Has symbols already
 dat1new2<-dat1
