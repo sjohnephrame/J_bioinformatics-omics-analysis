@@ -1,4 +1,4 @@
-#functions2_file_from_DR. THOMPSON-GITHUB.R
+#functions2_file_from_Dr. Jeffrey Thompson Lab-GITHUB.R
 
 # library(gageData)
 library(org.Mm.eg.db)     # contains symbols
