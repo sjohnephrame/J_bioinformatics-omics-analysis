@@ -1,11 +1,13 @@
 
-#======================================================================================#
+#===================================================================================
 #J_18-Plex TMT-Phosphoproteomics analysis_SY5Y OGT Knockdown (KD) Neuroblatoma cells
-#======================================================================================#
+#===================================================================================
 
 # Clear environment
 #rm(list = ls())
 #dir.create() - creates a folder (directory) on your computer.
+
+#install.packages("rlang", version="1.1.7")
 
 # Attach libraries
 library(BiocManager)
@@ -749,10 +751,10 @@ pdat14<-pdat13_filtered #has only rows where SiteID is not NA
 #dim(pdat13) #[1] 32559    28 without filtering
 #pdat14 = na.omit(pdat13) # Too aggressive
 #==================================================================================================
-
+head(pdat14)
 dim(pdat14)
-colnames(pdat14)
 #[1] 24914    28 #has only rows where SiteID is not NA
+colnames(pdat14)
 
 ## Export to Excel
 #write_xlsx(pdat14, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat14.xlsx")
@@ -839,11 +841,80 @@ dim(pdat15_filtered_check) #[1] 16748    28 - After removing all zero rows
 
 #filter() = keeps/removes rows
 
+#=========================================#
+#Process ambiguous sites
+#=========================================#
+
+head(pdat15_filtered_check)
+pdat15_filtered_check_old<-pdat15_filtered_check
+head(pdat15_filtered_check_old)
+pdat15_filtered_check<-as.data.frame(pdat15_filtered_check)
+head(pdat15_filtered_check)
+
+sum(grepl(";", pdat15_filtered_check$SiteID))
+#985
+
+#pdat15_filtered_check2 %>%
+#  filter(grepl(";", SiteID)) %>%
+#  View()
+
+pdat15_filtered_check %>%
+  filter(grepl(";", SiteID)) %>%
+  head()
+
+head(pdat15_filtered_check)
+
+
+# 2. Keep only the text before the first semicolon
+pdat15_filtered_check$new_SiteID <-pdat15_filtered_check$SiteID 
+head(pdat15_filtered_check)
+
+pdat15_filtered_check$SiteID<-sub(";.*", "", pdat15_filtered_check$SiteID)
+
+head(pdat15_filtered_check)
+
+sum(grepl(";", pdat15_filtered_check$SiteID))
+#0
+sum(grepl(";", pdat15_filtered_check$new_SiteID))
+#985
+
+#Thus filtered pdat15_filtered_check2 SitID to not have ambiguous sites
+#Kept only first sites
+
+pdat15_filtered_check %>%
+  filter(grepl(";", new_SiteID)) %>%
+  head()
+
+#pdat15_filtered_check2 %>%
+ # filter(grepl(";", SiteID)) %>%
+#  view()
+
+#pdat.de_edit<-as.data.frame(pdat.de_edit)
+#head(pdat.de_edit)
+# 3. Assign the cleaned names back to the data frame
+#rownames(pdat.de_edit) <- pdat.de_edit$new_SiteID
+
+head(pdat15_filtered_check)
+head(pdat15_filtered_check_old)
+dim(pdat15_filtered_check)
+dim(pdat15_filtered_check_old)
+pdat15_filtered_check_all<-pdat15_filtered_check
+head(pdat15_filtered_check_all)
+dim(pdat15_filtered_check_all)
+
+pdat15_filtered_check<-pdat15_filtered_check[,-29]
+head(pdat15_filtered_check)
+dim(pdat15_filtered_check)
+#[1] 16748    28
+sum(grepl(";", pdat15_filtered_check$SiteID))
+#0
+
 #===================================
 #Check Duplicates
 #===================================
 dim(pdat15) #[1] 24914    28 - No missing values but have duplicate SiteID, all zero rows
 dim(pdat15_filtered_check) #[1] 16748    28 - After removing all zero rows
+head(pdat15_filtered_check)
 
 #pdat15 #[1] 24914    28 - No missing values but have duplicate SiteID, all zero rows
 d <- duplicated(pdat15_filtered_check$SiteID) #creates logical vector (TRUE/FALSE) indicating which rows are duplicates
@@ -867,6 +938,9 @@ table(duplicated(pdat15_filtered_check$SiteID))
 #FALSE  TRUE 
 #12298  4450
 12298+4450 #[1] 16748
+
+#FALSE  TRUE 
+#12289  4459 - after filtering ambiguous sites
 
 #Or to see which ones:
   
@@ -962,9 +1036,9 @@ colSums(pdat15_filtered_check[, target_cols] < 1e-5, na.rm = TRUE)
 
 #Therefore, Imputation not needed
 
-#===========================================================================================================================================#
-# Summarize duplicates by Median intensity per site (most common - for technical replicates); but here we dont have technical replicates
-#===========================================================================================================================================#
+#=================================================================
+# Summarize duplicates by Median intensity per site (most common)
+#=================================================================
 
 library(dplyr)
 
@@ -983,9 +1057,14 @@ head(d)
 table(duplicated(pdat15_filtered_check$SiteID))
 #FALSE  TRUE 
 #12298  4450 
+#FALSE  TRUE 
+#12289  4459 #After filtering ambiguous sites
+
 pdat16.1 <- pdat15_filtered_check[!d,]
 dim(pdat16.1) #[1] 12298    28 - No missing values and w/o duplicates SiteID
 #But this is very aggressiveBecause keeps only the 1st row and removes the rest of the rows
+
+#12289  28 after filtering ambiguous sites
 
 #====================================================================================================================================#
 #So Summarize duplicates by Adding (more common)/Median intensity per site (only if technical replicates) For phosphoproteomis
@@ -996,10 +1075,38 @@ table(duplicated(pdat15_filtered_check$SiteID))
 #FALSE  TRUE 
 #12298  4450 
 12298+4450 #[1] 16748
+
+#FALSE  TRUE 
+#12289  4459 
+
 pdat15_filtered_check %>% 
   dplyr::filter(SiteID == "O43719_S498") %>% 
   dplyr::select(SiteID, where(is.numeric))
 dim(pdat15_filtered_check) #[1] 16748    28
+
+head(pdat8)
+pdat8 %>% 
+  dplyr::filter(Accessions == "O43719") %>% 
+  View()
+
+pdat8 %>% 
+  dplyr::filter(Accessions == "O43719") %>% 
+  print()
+
+#Why are there duplicates if the sequence is identical?
+#In mass spectrometry, when a peptide ionizes, it picks up protons.
+#The exact same peptide sequence ESEEGNPVRGSEEDSPKKESK will often fly through 
+#the instrument at both a +2 and a +3 charge state. The instrument triggers
+#separate scans for each, resulting in two separate rows with identical sequences 
+#but different intensity values.
+
+#Need to sum these intensities together. 
+#Because the mass spectrometer split the exact same peptide into different 
+#charge states during ionization, adding them together gives you the true,
+#total abundance of that peptide variant
+
+head(pdat15_filtered_check)
+dim(pdat15_filtered_check)
 
 pdat16.2 <- pdat15_filtered_check %>% 
   group_by(SiteID) %>%
@@ -1014,6 +1121,7 @@ pdat16.3 <- pdat15_filtered_check %>%
 pdat16.3<-as.data.frame(pdat16.3)
 dim(pdat16.3) #[1] 12298    19 #After Summarizing duplicates by Median intensity per site 
 head(pdat16.3)
+
 
 #========================#
 #Duplicate Sites Check
@@ -1041,11 +1149,11 @@ dplyr::select(SiteID, where(is.numeric)) #summarizing all duplicates identities 
 # Export to Excel
 #write_xlsx(pdat15_filtered_check, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat15_filtered_check.xlsx")
 #write_xlsx(pdat16.1, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat16.1.xlsx")
-#write_xlsx(pdat16.2, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat16.2 new.xlsx")
+#write_xlsx(pdat16.2, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat16.2_07062026_updated.xlsx")
 #write_xlsx(pdat16.5, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat16.5.xlsx")
 
-head(pdat16.2)
-dim(pdat16.2) #[1] 12298    19 After summarizing all duplicates identities by median intensities; removed NA and all 0 columns
+head(pdat16.2) #The summed duplicates
+dim(pdat16.2) #[1] 12289    19 After summarizing all duplicates identities by median intensities; removed NA and all 0 columns
 
 # All non-numeric, non-grouping columns are dropped automatically
 
@@ -1074,12 +1182,12 @@ dim(pdat15) #[1] 24914    28 - has only rows where SiteID is not NA but have dup
 dim(pdat15_filtered_check) #[1] 16748    28 - After removing all zero rows to median summarize intensities 
 table(duplicated(pdat15_filtered_check$SiteID))
 #FALSE  TRUE 
-#12298  4450 
-12298+4450 #[1] 16748
-dim(pdat16.2) #[1] 12298   19  - No missing values and w/o duplicates SiteID (median summarized) - after removing all 0 rows
+#12289  4459 
+12289+4459 #[1] 16748
+dim(pdat16.2) #[1] 12289   19  - No missing values and w/o duplicates SiteID (addition summarized) - after removing all 0 rows
 table(duplicated(pdat16.2$SiteID))
 #FALSE 
-#12298
+#12289
 colnames(pdat1) #Original file doesnt have symbols
 
 #=================================#
@@ -1090,9 +1198,9 @@ library(ggplot2)
 library(scales)
 # Create the data frame with your numbers
 attrition_data <- data.frame(
-  Step = factor(c("1. Raw Peptides", "2. Missing Value Filter", "3. Median Summarization of Duplicates"),
-                levels = c("1. Raw Peptides", "2. Missing Value Filter", "3. Median Summarization of Duplicates")),
-  Count = c(32559, 16748, 12298)
+  Step = factor(c("1. Raw Peptides", "2. Missing Value Filter", "3. Summarization of Duplicates"),
+                levels = c("1. Raw Peptides", "2. Missing Value Filter", "3. Summarization of Duplicates")),
+  Count = c(32559, 16748, 12289)
 )
 # Levels = This is the exact order I want these categories displayed
 
@@ -1129,7 +1237,7 @@ ggplot(attrition_data, aes(x = Step, y = Count, fill = Step)) +
 dim(pdat13) #[1] 32559    28 #has all rows after filtering only for High and medium FDR
 dim(pdat15) #[1] 24914    28 - has only rows where SiteID is not NA but have duplicate SiteID
 dim(pdat15_filtered_check) #[1] 16748    28 - After removing all zero rows to median summarize intensities 
-dim(pdat16.2) #[1] 12298   19  - No missing values and w/o duplicates SiteID (median summarized) - after removing all 0 rows
+dim(pdat16.2) #[1] 12289   19  - No missing values and w/o duplicates SiteID (median summarized) - after removing all 0 rows
 
 #-------------------------------------------------------------------------------------------------
 #log2 transform 
@@ -1148,13 +1256,14 @@ dim(pdat16.2) #[1] 12298   19  - No missing values and w/o duplicates SiteID (me
 #We need data clean like dat_comp1 to be able to do the analysis and plots
 #other cols except site id already removed
 
-dim(pdat16.2) #12298    19 #other cols except site id already removed; No missing values and w/o duplicates SiteID (median summarized)
+dim(pdat16.2) #12289    19 #other cols except site id already removed; No missing values and w/o duplicates SiteID (median summarized)
 
 head(pdat16.2)
 colnames(pdat16.2)
 
 pdat20.2<-pdat16.2
 pdat20.2<-as.data.frame(pdat20.2)
+
 head(pdat20.2)
 rownames(pdat20.2) <- pdat20.2$SiteID #convert column value to row names
 head(pdat20.2)
@@ -1227,14 +1336,14 @@ dim(pdat22.2_mat) #[1] 12298    18 # without NAs; matrix and log transformed
 #==================================================================
 
 head(pdat22.2)
-dim(pdat22.2) #[1] 12298    18 #No missing values and w/o duplicates SiteID (median summarized); is a dataframe; Not matrix and not log transformed; need for pca
+dim(pdat22.2) #[1] 12289    18 #No missing values and w/o duplicates SiteID (median summarized); is a dataframe; Not matrix and not log transformed; need for pca
 
 
 head(pdat22.2)#No missing values and w/o duplicate SiteID (median summarized); is a dataframe; Not matrix and not log transformed; not normalized; need for pca
 dim(pdat22.2)#[1] 8334   18 #No missing values and w/o duplicate SiteID (median summarized); is a dataframe; Not matrix and not log transformed; not normalized; need for pca
 for (i in 1:ncol(pdat22.2)){
   if (i==1){
-    plot(density(log10(pdat22.2[,1])),main="Density plot across phosphoproteomics study samples \n After median summarization of duplicates \n before log and matrix transformation",xlab="Subjects",col="blue",ylim=c(0,0.8))}
+    plot(density(log10(pdat22.2[,1])),main="Density plot across phosphoproteomics study samples \n After summarization of duplicates \n before log and matrix transformation",xlab="Subjects",col="blue",ylim=c(0,0.8))}
   else {
     den <- density(log10(pdat22.2[,i]))
     lines(den$x,den$y,col="blue")}
@@ -1375,12 +1484,12 @@ colnames(pdat24_mat_norm)
 table(apply(pdat24_mat_norm, 1, function(x) sum(is.na(x))))
 
 # 0 
-#12298  
+#12289  
 
 colnames(pdat23_mat_norm)
 table(apply(pdat23_mat_norm, 1, function(x) sum(is.na(x))))
 # 0 
-#12298  
+#12289  
 
 #So confirmed no missing values
 
@@ -1458,7 +1567,7 @@ head(pdat22.2) #No missing values and w/o duplicates SiteID (median summarized);
 dim(pdat22.2) #[1] 12298    18 #No missing values and w/o duplicates SiteID (median summarized); is a dataframe; Not matrix and not log transformed; need for pca
 table(apply(pdat22.2, 1, function(x) sum(is.na(x))))
 #0 
-#12298  
+#12289  
 
 labels<-colnames(pdat22.2)
 labels
@@ -1617,7 +1726,8 @@ PCA$p
 
 any(is.infinite(as.matrix(pdat24_mat_norm)))
 
-#####################################################################################
+#=================================================================================================================================================================================================#
+
 #=====================================#
 #Normalization with total proteome
 #=====================================#
@@ -1629,9 +1739,63 @@ head(pprot) #median normailzed and filtered values - use this for mds plot
 dim(pprot) #[1] 12298   18 #removed NA, without Symbol, median norm, log 2
 type(pprot)
 
+Normalize3 = read_xlsx("C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\Normalize2v4.xlsx")
+head(Normalize3)
+dim(Normalize3)
+Normalize3<-as.data.frame(Normalize3)
+head(Normalize3)
+dim(Normalize3)
+Normalize4<-Normalize3
+head(Normalize4)
+dim(Normalize4)
+rownames(Normalize4)<-(Normalize4$Accession)
+head(Normalize4)
+dim(Normalize4)
+Normalize5<-Normalize4
+head(Normalize5)
+dim(Normalize5)
+Normalize5<-Normalize5[,-1]
+head(Normalize5)
+dim(Normalize5)
+type(Normalize5)
+
+#Check Normalize vs Normalize 5 dataframe
+#head(Normalize)
+#type(Normalize)
+#dim(Normalize)
+
+#identical(Normalize, Normalize5)
+#all.equal(Normalize, Normalize5)
+#all.equal(attributes(Normalize), attributes(Normalize5))
+#all.equal(Normalize, Normalize5, tolerance = 0)
+#which(Normalize$`GFP0-1` != Normalize5$`GFP0-1`)
+
+# Round both datasets to 12 decimal places across all columns
+#Normalize_clean  <- as.data.frame(lapply(Normalize, function(x) if(is.numeric(x)) round(x, 5) else x))
+#Normalize5_clean <- as.data.frame(lapply(Normalize5, function(x) if(is.numeric(x)) round(x, 5) else x))
+
+# This will now return TRUE
+#identical(Normalize_clean, Normalize5_clean)
+#all.equal(Normalize_clean, Normalize5_clean)
+
+
+#Normalize == Normalize5
+#Normalize_clean==Normalize5_clean
+
+#So can use Normalize 5 (fed in excel sheet) instead of normalize (having to process entire total proteome every run)
+
 head(Normalize)
-type(Normalize)
+dim(Normalize)
 totalprot<-as.data.frame(Normalize)
+head(totalprot)
+dim(totalprot)
+
+head(Normalize5)
+dim(Normalize5)
+totalprot<-as.data.frame(Normalize5)
+head(totalprot)
+dim(totalprot)
+
 head(totalprot) #median normailzed and filtered values - use this for mds plot
 dim(totalprot) #[1] 9199   18 #removed NA, without Symbol, median norm, log 2
 type(totalprot)
@@ -1657,6 +1821,7 @@ pprot_df <- as.data.frame(pprot)
 pprot_df$SiteID <- rownames(pprot_df)
 pprot_df$Accession <- sub("_.*", "", pprot_df$SiteID) # Extracts everything before the "_"
 head(pprot_df)
+head(totalprot)
 
 # 2. Geting common proteins and columns
 common_prots <- intersect(pprot_df$Accession, rownames(totalprot))
@@ -1671,22 +1836,23 @@ length(common_cols)
 pprot_filtered <- pprot_df[pprot_df$Accession %in% common_prots, ]
 head(pprot_filtered)
 dim(pprot_filtered)
-#[1] 9358   20
+#[1] 9353   20
 dim(pprot_df)
-#[1] 12298    20
+#[1] 12289    20
 
 #4. Saving the missing IDs
 missing_prots <- setdiff(pprot_df$Accession, rownames(totalprot))
-length(missing_prots) # Number of proteins missing in total proteome #[1] 1484 missing
+length(missing_prots) # Number of proteins missing in total proteome 
+#[1] 1484 missing
 head(missing_prots)   # See the first few IDs
 pprot_missing <- pprot_df[pprot_df$Accession %in% missing_prots, ]
 head(pprot_missing)
 dim(pprot_missing)
-#[1] 2940   20
+#[1] 2936   20
 dim(pprot_filtered)
-#[1] 9358   20
-9358+2940
-12298-9358
+#[1] 9353   20
+9353+2936
+12289-9353
 
 # 5. Performing the subtraction (because log transformed values)
 # We use a loop or a vectorized approach to subtract the total protein row from the phospho row
@@ -1702,21 +1868,46 @@ for (i in 1:nrow(pprot_norm)) {
   pprot_norm[i, common_cols] <- pprot_norm[i, common_cols] - totalprot[acc, common_cols]
 }
 
+#1. Setting Up the Boundary 
+#(for (i in 1:nrow(pprot_norm)))nrow(pprot_norm) counts the total number of rows 
+#in your phosphoprotein dataset.1:nrow(...) creates a sequence of numbers from 1 
+#up to that total row count.i is a counter variable. 
+#The loop runs over and over, changing i to 1 on the first run, 2 on the second run,
+#3 on the third run, and so on, until it hits the final row.
+#2. Finding the Matching Total Protein 
+#(acc <- pprot_norm$Accession[i])In every iteration, R looks at the current row ([i]) 
+#of your phosphoprotein table and extracts the protein ID from the Accession column.
+#It saves this ID to a temporary variable called acc (e.g., "O43719").
+#3. Fetching and Subtracting the Data 
+#(pprot_norm[i, common_cols] - totalprot[acc, common_cols])
+#This is the core mathematical operation. 
+#On the right side of the arrow:pprot_norm[i, common_cols]:
+#Pulls the values for your specific samples (defined in common_cols) 
+#for the current row i.totalprot[acc, common_cols]: Uses the protein ID (acc) 
+#to jump directly to the matching row in your totalprot dataframe, 
+#pulling the baseline protein expression values for those exact same samples.
+#The Minus Sign (-): R subtracts the total protein values from the phosphoprotein 
+#values across all sample columns simultaneously.\
+#4. Overwriting the Data (pprot_norm[i, common_cols] <- ...)
+#Finally, the left side of the arrow takes the brand-new, subtracted numbers and 
+#saves them directly back into row i of your pprot_norm dataframe, 
+#overwriting the original unnormalized values.
+
 head(pprot_norm)
 dim(pprot_norm)
-#9358  20
+#9353  20
 
 # 6. Finalizing the matrix
 rownames(pprot_norm) <- pprot_norm$SiteID
 head(pprot_norm)
 dim(pprot_norm)
-#9358  20
+#9353  20
 pprot_normalized_final <- as.matrix(pprot_norm[, common_cols])
 
 # 7. Checking the first few rows
 head(pprot_normalized_final)
 dim(pprot_normalized_final)
-#[1] 9358   18
+#[1] 9353   18
 
 # 8. Preparing the missing data matrix (only intensity columns)
 head(pprot_missing)
@@ -1724,6 +1915,7 @@ dim(pprot_missing)
 pprot_missing_final <- as.matrix(pprot_missing[, common_cols])
 head(pprot_missing_final)
 dim(pprot_missing_final)
+#[1] 2936   18
 
 # 9. Stacking them together (9,358 + 2,940 = 12,298)
 pprot_full_analysis <- rbind(pprot_normalized_final, pprot_missing_final)
@@ -1731,7 +1923,7 @@ pprot_full_analysis <- rbind(pprot_normalized_final, pprot_missing_final)
 # 10. Checking the final dimensions
 head(pprot_full_analysis)
 dim(pprot_full_analysis) 
-# Should be [1] 12298 18
+# Should be [1] 12289 18
 
 #11.  Adding the "Normalized" flag to the results for later
 # This is crucial so you don't over-interpret the missing sites
@@ -1739,7 +1931,7 @@ is_normalized <- rownames(pprot_full_analysis) %in% rownames(pprot_normalized_fi
 head(is_normalized)
 length(is_normalized)
 
-#12. Creating the metadata table
+#12. Creating the metadata table - regarding whether total protein normalized or not
 feature_info <- data.frame(
   SiteID = rownames(pprot_full_analysis),
   IsNormalized = rownames(pprot_full_analysis) %in% rownames(pprot_normalized_final)
@@ -1781,20 +1973,21 @@ all(rownames(pprot_full_analysis) == feature_info$SiteID)
 #==========================================#
 
 head(pdat23_mat_norm) #median normailzed and filtered values - use this for mds plot
-dim(pdat23_mat_norm) #[1] 12298   18 #removed NA, without Symbol, median norm, log 2
+dim(pdat23_mat_norm) #[1] 12289   18 #removed NA, without Symbol, median norm, log 2
 head(pprot_full_analysis)
-dim(pprot_full_analysis) #[1] 12298   18 #Normalized to total proteome; removed NA, without Symbol, median norm, log 2
-dim(pdat23_mat_norm) #[1] 12298   18 #removed NA, without Symbol, median norm, log 2
+dim(pprot_full_analysis) #[1] 12289   18 #Normalized to total proteome; removed NA, without Symbol, median norm, log 2
+dim(pdat23_mat_norm) #[1] 12289   18 #removed NA, without Symbol, median norm, log 2
 
 #pdat.de = pdat23_mat_norm
-pdat.de = pprot_full_analysis
+pdat.de = pprot_full_analysis #Normalized to total proteome
+
 
 # Change column names to not contain "-", since this will conflict with naming syntax in contrast matrix
 
 head(pdat.de)
 colnames(pdat.de)
 dim(pdat.de)
-#[1] 12298    18
+#[1] 12289    18
 
 # Getting a data.frame with 'Accession' and 'Symbol' columns
 
@@ -1806,7 +1999,7 @@ pmapping2.2<-as.data.frame(pmapping2)
 head(pmapping2.2)
 any(is.na(pmapping2.2))
 pmapping3 <- pmapping2
-dim(pmapping3) #[1] 12298     1
+dim(pmapping3) #[1] 12289     1
 
 library(dplyr)
 library(stringr)
@@ -1815,7 +2008,7 @@ library(stringr)
 pmapping2$UniprotAcc <- str_extract(pmapping2$V1, "^[^_]+")
 any(is.na(pmapping2))
 head(pmapping2)
-dim(pmapping2) #[1] 12298     2
+dim(pmapping2) #[1] 12289     2
 
 #-----------------------------------------------------------------------#
 #Used Biomart first but had more missing symbols (747) (322 UNIQUE NAs)
@@ -1884,7 +2077,7 @@ bm_clean <- bm_map %>%
 #later join this to another dataset.
 
 head(bm_clean)
-dim(bm_clean) #without distinct - [1] 24522     2 # with distinct [1] 23176  2 
+dim(bm_clean) #without distinct - [1] 24522     2 # with distinct [1] 23176  2 #23342 2
 head(pmapping2)
 dim(pmapping2)#[1] 12298     2
 pmapping4 <- pmapping2 %>%
@@ -1904,20 +2097,22 @@ head(bm_clean)
 table(duplicated(bm_clean$UniprotAcc))
 #FALSE  TRUE 
 #23143    33
+#23309    33
 
 bm_clean_unique <- bm_clean %>%
   distinct(UniprotAcc, .keep_all = TRUE)
 table(duplicated(bm_clean_unique$UniprotAcc))
 #FALSE 
 #23143 
-
+#23309
+head(bm_clean_unique)
 # Joining
 pmapping4 <- pmapping2 %>%
   left_join(bm_clean_unique, by = "UniprotAcc")
 
 # Result changed to 12298 rows
-dim(pmapping4) #[1] 12298     3
-dim(pmapping2) #[1] 12298     2 
+dim(pmapping4) #[1] 12289     3
+dim(pmapping2) #[1] 12289     2 
 #Rows match
 head(pmapping4)
 head(pmapping2)
@@ -1947,14 +2142,18 @@ table(is.na(pmapping4$hgnc_symbol))
 #11568   747
 #FALSE  TRUE 
 #11549   749
-
+#FALSE  TRUE 
+#11555   734 
 needs_mapping2 <- is.na(pmapping4$hgnc_symbol)
 head(needs_mapping2)
+length(needs_mapping2)
+table(needs_mapping2)
 
 missing_ids2 <- unique(pmapping4$UniprotAcc[needs_mapping2])
 head(missing_ids2)
 length(missing_ids2)
 #[1] 324 (old=322 before replacing blank)
+#320
 
 #pmapping4 has bm_clean=biomart joined
 #rownames(pdat.de)[grep("_T152", rownames(pdat.de))]
@@ -1977,6 +2176,7 @@ missing_ids2[grep("A0A494C030", missing_ids2)]
 library(org.Hs.eg.db)
 head(pmapping4)
 head(missing_ids2)
+length(missing_ids2)
 map_res <- mapIds(org.Hs.eg.db, 
                   keys = missing_ids2, 
                   column = "SYMBOL", 
@@ -2001,9 +2201,12 @@ any(is.na(missing_idsmap))
 table(is.na(missing_idsmap$missing_ids2))
 #FALSE 
 #324
+#320
 table(is.na(missing_idsmap$Symbol))
 #FALSE  TRUE 
 #115   209
+#FALSE  TRUE 
+#111   209 
 head(missing_idsmap)
 
 pmapping4[grep("A0A494C030_T152", pmapping4$V1), ] #hgnc_symbol blank
@@ -2016,13 +2219,14 @@ missing_idsmap[grep("A0A494C066", missing_idsmap$missing_ids2), ] #hgnc_symbol b
 
 head(missing_idsmap)
 head(missing_ids2) #was used for missing_idsmap
+dim(missing_idsmap)
 
 #Org.Hs standardized mapping table
 org_hs_clean <- missing_idsmap %>%
   dplyr::select(UniprotAcc = missing_ids2, symbol_org_hs = Symbol) %>%
   filter(!is.na(symbol_org_hs))
 head(org_hs_clean)
-dim(org_hs_clean)#[1] 115   2
+dim(org_hs_clean)#[1] 115   2 #[1] 111   2
 
 needs_mapping3 <- is.na(missing_idsmap$Symbol)
 head(needs_mapping3)
@@ -2031,7 +2235,7 @@ missing_ids3 <- unique(missing_idsmap$missing_ids2[needs_mapping3])
 head(missing_ids3)
 length(missing_ids3)
 #[1] 209
-
+320-111
 #-----------------------------------------------------------------------#
 # 2. Query UniProt for ONLY those specific IDs
 #-----------------------------------------------------------------------#
@@ -2056,6 +2260,9 @@ head(extra_map)
 table(is.na(extra_map$Gene.Names))
 #FALSE  TRUE 
 #  99   110 
+#FALSE  TRUE 
+#97   112 
+
 nrow(extra_map) #[1] 209
 
 nrow(extra_map) == length(missing_ids3)
@@ -2073,12 +2280,13 @@ uniprot_ws_clean <- extra_map %>%
   filter(!is.na(symbol_uni_ws))
 
 head(uniprot_ws_clean)
-dim(uniprot_ws_clean) #[1] 99  2
+dim(uniprot_ws_clean) #[1] 99  2 #97  2
 
 ids_to_fix <- extra_map$From[is.na(extra_map$Gene.Names)]
 head(ids_to_fix)
 length(ids_to_fix) 
 #110
+#112
 
 # Copy these from your console
 cat(ids_to_fix, sep = ", ") 
@@ -2086,108 +2294,13 @@ cat(ids_to_fix, sep = ", ")
 head(ids_to_fix)
 length(ids_to_fix)
 
-#-----------------------------------------------------------------------#
-#Manual map
-#-----------------------------------------------------------------------#
-
-# Create the manual lookup table
-manual_map <- data.frame(
-  UniprotAcc = c(
-    "A0A024RAC6", "A0A024RCR6", "A0A075B6Q3", "A0A075B793", "A0A087WSZ7", 
-    "A0A087WT80", "A0A087WTB8", "A0A087WTG3", "A0A087WTQ6", "A0A087WUV9", 
-    "A0A087WVR4", "A0A087WW39", "A0A087WW83", "A0A087WWA7", "A0A087WWC4", 
-    "A0A087WWM5", "A0A087WWT0", "A0A087WXL3", "A0A087WXW3", "A0A087WXX9", 
-    "A0A087WXZ7", "A0A087WY61", "A0A087WYH9", "A0A087WYN9", "A0A087WYX6", 
-    "A0A087WZK9", "A0A087WZU8", "A0A087X060", "A0A087X0G1", "A0A087X0K0", 
-    "A0A087X1S9", "A0A087X2D8", "A0A096LNX8", "A0A0A0MS54", "A0A0A0MS59", 
-    "A0A0A0MSI8", "A0A0A0MSL3", "A0A0A0MSU2", "A0A0A0MT60", "A0A0A0MTC6", 
-    "A0A0A0MTG6", "A0A0A0MTH9", "A0A0A0MTS2", "A0A0C4DGW2", "A0A0C4DGZ1", 
-    "A0A0D9SF60", "A0A0D9SFF8", "A0A0J9YYL3", "A0A0U1RQB7", "A0A1P0AZG4", 
-    "A0A1W2PNZ9", "A0A1W2PQ51", "A0A1W2PQ75", "A0A1W2PQJ7", "A0A1W2PQQ1", 
-    "A0A1W2PR67", "A0A1W2PRA1", "A0A1W2PRL9", "A0A2Q2TH77", "A0A2R8Y4C2", 
-    "A0A2R8Y611", "A0A2R8YFF1", "A0A3B3IS11", "A0A3B3ITS5", "A0A494C1P3", 
-    "A9X3U0", "B1AKJ5", "B5MD58", "C9J519", "C9JQ72", "D3DP56", "D6RA44", 
-    "D6W5A2", "E7ENH0", "E7ENN3", "E7EST9", "E9PJ09", "F5H212", "F5H5I6", 
-    "F6S7C4", "F6TB26", "F6WH68", "F8W6L4", "F8WAN9", "G3V261", "H0YJ75", 
-    "H0YL38", "H0YMB6", "H0YN96", "H3BLV5", "H3BN59", "H3BQQ2", "H7C1J4", 
-    "J3KNN5", "J3KR44", "J3QSX6", "K7EIV9", "K7EPK0", "M9T4I7", "P0DN79", 
-    "Q499Y3", "Q5JPT1", "Q6ZQT7", "Q6ZSR3", "Q71RC1", "Q8IWY7", "S4R2X8", 
-    "S4R347", "V9GYY5", "W4VSQ3"
-  ),
-  ManualSymbol = c(
-    "ELOA", "RCR6", "IGLV6-57", "IGLV10-54", "MMP24", 
-    "ZNF232", "ZBTB21", "ZNF837", "ZNF490", "MYC", 
-    "ZNF782", "ZBTB1", "ZNF629", "ZNF711", "ZNF684", 
-    "ZNF564", "ZNF682", "ZNF33A", "ZNF563", "ZNF491", 
-    "ZNF844", "ZNF121", "ZNF584", "ZNF525", "ZNF160", 
-    "ZNF567", "ZNF846", "ZNF43", "ZNF28", "ZNF44", 
-    "ZNF558", "ZNF20", "MAP2", "IGKV1-16", "IGKV1D-16", 
-    "IGKV1-27", "IGKV1D-33", "IGKV2-30", "IGLV2-18", "IGLV3-25", 
-    "IGLV1-44", "IGLV1-47", "IGLV5-45", "IGLV1-36", "IGLV1-41", 
-    "IGHV3-13", "IGHV3-30", "IGHV3-49", "ZNF891", NA, 
-    "IGLV1-40", "IGLV2-8", "IGLV2-11", "IGLV3-1", "IGLV3-19", 
-    "IGLV3-27", "IGLV4-3", "IGLV7-43", NA, "IGHV1-2", 
-    "IGHV3-7", "IGHV4-31", "IGHV3-21", "IGHV3-64", NA, 
-    "ZNF253", "ZNF625", "ZNF417", "ZNF500", "ZNF8", "ZNF235", "ZNF83", 
-    "ZNF431", "ZNF773", "ZNF772", "ZNF829", "ZNF568", "ZNF607", "ZNF551", 
-    "ZNF570", "ZNF789", "ZNF664", "ZNF732", "ZNF724", "ZNF433", "ZNF582", 
-    "ZNF709", "ZNF77", "ZNF708", "ZNF780B", "ZNF559", "ZNF135", "ZNF543", 
-    "ZNF793", "ZNF836", "ZNF616", "ZNF735", "ZNF425", "ZNF671", "AARS1", 
-    "ZNF814", "ZNF605", "ZNF714", "ZNF736", "ZNF548", "ZNF843", "ZNF831", 
-    "ZNF813", "ZNF583", "ZNF524"
-  ),
-  stringsAsFactors = FALSE
-)
-
-head(manual_map)
-dim(manual_map)
-head(ids_to_fix)
-
-(manual_map$UniprotAcc) == ids_to_fix
-#All true
-
-table(is.na(manual_map$ManualSymbol))
-#FALSE  TRUE 
-#107     3
-
-library(dplyr)
-
-# Filter for missing symbols
-na_symbols <- manual_map %>% 
-  filter(is.na(ManualSymbol))
-
-# Display the results
-print(na_symbols)
-
-head(manual_map)
-# Update the specific ID in the existing manual_map dataframe
-manual_map$ManualSymbol[manual_map$UniprotAcc == "A0A1P0AZG4"] <- "LCOR"
-manual_map$ManualSymbol[manual_map$UniprotAcc == "A0A2Q2TH77"] <- "GOLGA2"
-#manual_map$ManualSymbol[manual_map$UniprotAcc == "A0A494C1P3"] <- "MOSC domain containing protein"
-manual_map$ManualSymbol[manual_map$UniprotAcc == "A0A494C1P3"] <- "MOSC2"
-
-# Verify the change
-manual_map %>% filter(UniprotAcc == "A0A1P0AZG4")
-manual_map %>% filter(UniprotAcc == "A0A2Q2TH77")
-manual_map %>% filter(UniprotAcc == "A0A494C1P3")
-
-head(manual_map)
-table(is.na(manual_map$ManualSymbol))
-#FALSE 
-#110
-dim(manual_map) #110   2
-
-#pmapping4 has bm_clean=biomart joined
-#missing_idsmap like bm clean but org hs
-#extra_map = uniprot.ws mapping (Gene.Names)
-#manual_map is  all manual map
 
 #Thus,
 
 #pmapping4 has bm_clean=biomart joined
 #missing_idsmap like bm clean but org hs; org_hs_clean = mapping table
 #extra_map = uniprot.ws mapping (Gene.Names); uniprot_ws_clean = mapping table
-#manual_map is  all manual map
+#manual_map is  all manual map - trembl ids so NA
 
 #-----------------------------------------------------------------------#
 #Integration of all mapping:
@@ -2195,27 +2308,35 @@ dim(manual_map) #110   2
 
 library(dplyr)
 
+head(missing_ids2)
+length(missing_ids2)
+
+head(pmapping4)
+dim(pmapping4)
+
 # 1. Standardize your intermediate mapping tables for joining
 # From org.Hs.eg.db
 head(org_hs_clean) 
-dim(org_hs_clean)#[1] 115   2 #old-with blank=113
+dim(org_hs_clean)#[1] 111   2 #old-with blank=113
 
 # From UniProt.ws (cleaning Gene.Names to get just the first symbol)
 head(uniprot_ws_clean) 
-dim(uniprot_ws_clean) #[1] 99  2
+dim(uniprot_ws_clean) #[1] 97  2
 
-head(manual_map) 
-dim(manual_map) #[1] 110  2
+nrow(org_hs_clean)+nrow(uniprot_ws_clean)
+#[1] 208
+nrow(org_hs_clean)+nrow(uniprot_ws_clean)+length(ids_to_fix)
+#320
+320-208
 
-nrow(org_hs_clean)+nrow(uniprot_ws_clean)+nrow(manual_map)
-#[1] 324 #old with blank =322
-
-#table(is.na(pmapping4$UniprotAcc))
+table(is.na(pmapping4$UniprotAcc))
 #FALSE 
 #12298 
-#table(is.na(pmapping4$hgnc_symbol))
+head(pmapping4)
+table(is.na(pmapping4$hgnc_symbol))
 #FALSE  TRUE 
 #11568   747
+#11568   734
 
 #needs_mapping2 <- is.na(pmapping4$hgnc_symbol)
 #head(needs_mapping2)
@@ -2223,7 +2344,7 @@ nrow(org_hs_clean)+nrow(uniprot_ws_clean)+nrow(manual_map)
 #missing_ids2 <- unique(pmapping4$UniprotAcc[needs_mapping2])
 head(missing_ids2)
 length(missing_ids2)
-#[1] 324
+#[1] 320
 
 
 # 2. Sequential Join
@@ -2233,17 +2354,17 @@ pmapping10 <- pmapping4 %>%
   left_join(org_hs_clean, by = "UniprotAcc") %>%
   left_join(uniprot_ws_clean, by = "UniprotAcc") %>%
   # Join manual source
-  left_join(manual_map, by = "UniprotAcc") %>%
+  #left_join(manual_map, by = "UniprotAcc") %>%
  
   # 3. Create 'source' and final 'hgnc_symbol' columns
   mutate(
-    Symbol = coalesce(hgnc_symbol, symbol_org_hs, symbol_uni_ws, ManualSymbol),
+    Symbol = coalesce(hgnc_symbol, symbol_org_hs, symbol_uni_ws),
     
     source = case_when(
       !is.na(hgnc_symbol) ~ "biomart",
       !is.na(symbol_org_hs) ~ "org_hs_db",
       !is.na(symbol_uni_ws) ~ "uniprot_ws",
-      !is.na(ManualSymbol) ~ "manual",
+      #!is.na(ManualSymbol) ~ "manual",
       TRUE ~ "accession_only"
     ))
     
@@ -2284,13 +2405,18 @@ head(pmapping10) #has all columns including source
 table(is.na(pmapping10$Symbol))
 #FALSE 
 #12298 
+#FALSE  TRUE 
+#12033   256 
 table(is.na(pmapping10$V1))
 #FALSE 
-#12298 
+#12289 
 # Count how many are tagged as accession_only
 table(pmapping10$source == "accession_only")
-#FALSE 
-#12298  
+#FALSE  TRUE 
+#12033   256   
+
+#FALSE  TRUE 
+#12033   256
 
 colnames(pmapping10)[colnames(pmapping10) == "V1"] <- "SiteID"
 head(pmapping10) #has all columns including source
@@ -2310,13 +2436,6 @@ pmapping11 <- pmapping10 %>%
 #To check:
 
 head(pmapping11)
-table(is.na(pmapping11$Symbol_Site))
-#FALSE 
-#12298 
-
-table(is.na(pmapping11$SiteID))
-#FALSE 
-#12298 
 
 pmapping11 %>% 
   dplyr::filter(UniprotAcc  == "I3L4X2")
@@ -2327,6 +2446,8 @@ pmapping11 %>%
 pmapping11 %>% 
   dplyr::filter(UniprotAcc  == "A0A494C066")
 
+head(pmapping11)
+
 table(duplicated(pmapping11$SiteID))
 #FALSE   
 #12298    
@@ -2334,113 +2455,136 @@ table(duplicated(pmapping11$SiteID))
 table(duplicated(pmapping11$Symbol_Site))
 #FALSE  TRUE 
 #12289     9
+#FALSE  TRUE 
+#12268    21
 
 head(pmapping11)
 dim(pmapping11) #has all rows merged
 
-#To check for duplicated Symbol_Site in pmapping 11
+head(pdat.de)
+dim(pdat.de)
+#[1] 12289    18
 
-pmapping11 %>%
-  group_by(Symbol_Site) %>%
-  filter(n() > 1) %>%
-  arrange(Symbol_Site)
+#Filter for missing symbols in pmapping 11 and pdatde
 
-pmapping12 <- pmapping11 %>%
-  # Sort so that SiteIDs with semicolons (longer strings) come first
-  arrange(Symbol_Site, desc(nchar(SiteID))) %>% 
-  # Keep only the first occurrence of each Symbol_Site
-  distinct(Symbol_Site, .keep_all = TRUE)
+pdat.de_old<-pdat.de
+#pdat.de<-pdat.de_old
 
-# Verify the count is now 12289
-dim(pmapping12) #After removing semicolon and single-- but not needed for dea
-#[1] 12289     9
+head(pdat.de_old)
+dim(pdat.de_old)
+head(pdat.de)
+dim(pdat.de)
 
-pmapping12 %>%
-  group_by(Symbol_Site) %>%
-  filter(n() > 1) %>%
-  arrange(Symbol_Site)
+pdat.de<-as.data.frame(pdat.de)
+head(pdat.de)
+dim(pdat.de)
+pdat.de$SiteID<-rownames(pdat.de)
+head(pdat.de)
+dim(pdat.de)
 
-library(dplyr)
-pmapping12 %>% 
-  filter(grepl("B4DY08_S247;P07910_S260", SiteID))
+head(pmapping11)
+dim(pmapping11) #has all rows merged
+
+library(tidyverse)
+
+
+# 2. Merge the column into pdat.de and move it to the front next to SiteID
+pdat.de <- pdat.de %>%
+  left_join(pmapping11, by = "SiteID") 
 
 head(pdat.de)
-# Filter for both variations of the HNRNPC site
+dim(pdat.de)
 
-#pdat.de=matrix
+# Should output: 12289    22
 
-pdat.de[rownames(pdat.de) %in% c("B4DY08_S247;P07910_S260", "P07910_S260"), ]
+table(is.na(pdat.de$Symbol))
 
-#The values are different. This means your quantification software identified and measured these as two distinct events (likely two different peptides or charge states that map to the same site).
-#Conclusion: Keep all 12,298 rows
-#Since the intensities are not identical, these are not "accidental" duplicates. They represent unique data points. If you delete one, you are throwing away real measurements.
+#FALSE  TRUE 
+#12033   256 
 
-# 1. Get the SiteIDs for all duplicate Symbol_Sites
-head(pmapping11) #has all columns
-dim(pmapping11)
-dup_site_idscheck <- pmapping11 %>%
-  group_by(Symbol_Site) %>%
-  filter(n() > 1) %>%
-  pull(SiteID)
-dup_site_idscheck
-length(dup_site_idscheck) # 18
-# 2. Subset the matrix using those IDs
-pdat.de[rownames(pdat.de) %in% dup_site_idscheck, ]
+pdat.de_all<-pdat.de
+head(pdat.de_all)
+dim(pdat.de_all) #12289  26
+head(pdat.de)
+dim(pdat.de) #12289  26
 
-#But need paired for ease of view
+table(is.na(pdat.de$Symbol))
 
-sorted_ids <- pmapping11 %>%
-  filter(SiteID %in% rownames(pdat.de)) %>% # ensure IDs exist in matrix
-  arrange(Symbol_Site) %>%
-  pull(SiteID)
+#FALSE  TRUE 
+#12033   256 
 
-#The %in% operator in R is a matching operator used to check if elements from one vector exist within another. 
-#filter(SiteID %in% rownames(pdat.de)): filter(SiteID %in% rownames(pdat.de)): 
-#It looks at the SiteID column and only keeps rows where that ID actually exists 
-#as a row name in your data matrix (pdat.de). This prevents "subscript out of bounds" errors later.
-#arrange(Symbol_Site): This sorts the entire data frame alphabetically based on the Symbol_Site column
-#pull(SiteID): Finally, instead of keeping the whole data frame, this "plucks" out just the SiteID column as a simple list (vector)
+library(tidyverse)
 
-head(sorted_ids)
-# 2. Reorder your matrix
-pdat.de_sorted <- pdat.de[sorted_ids, ]
-head(pdat.de_sorted) #entire pdat.de sorted based on names order
-head(dup_site_idscheck) #Just the dupliccated site ids
-# 3. View the 18 rows again - they will now be paired
-pdat.de_sorted[rownames(pdat.de_sorted) %in% dup_site_idscheck, ]
+# Filter to keep ONLY rows where Symbol is missing (NA)
+pdat.na_only <- pdat.de %>%
+  filter(is.na(Symbol))
 
-pmapping11 %>%
-  group_by(Symbol_Site) %>%
-  filter(n() > 1) %>%
-  arrange(Symbol_Site)
+# View the filtered data
+head(pdat.na_only)
+dim(pdat.na_only)
 
-#all values are different; so keep 12298 as they could just be isoforms
+#[1] 256  26
 
-head(pmapping11) #J_Has all columns for mapping reference
-dim(pmapping11) #[1] 12298     9
+library(tidyverse)
 
-# Create a simplified mapping file with only 2 columns
-pmappingde <- pmapping11 %>%
-  dplyr::select(SiteID, Symbol_Site) %>%
-  # Ensure the rows are in the exact same order as your expression matrix
-  dplyr::filter(SiteID %in% rownames(pdat.de)) %>%
-  dplyr::slice(match(rownames(pdat.de), SiteID))
+# Remove the NA rows and update pdat.de
+pdat.de <- pdat.de %>%
+  filter(!is.na(Symbol))
 
-#dplyr::filter(SiteID %in% rownames(pdat.de))
-#This removes rows.
-#It looks at pmapping11 and keeps only the SiteIDs that are actually present in your expression matrix (pdat.de)
+# Check the new dimensions to see how many rows remain
+head(pdat.de)
+dim(pdat.de)
+#[1] 12033    26
+library(tidyverse)
 
-#dplyr::slice(match(rownames(pdat.de), SiteID))
-#This reorders rows.
-#In R, matrix math (like DE analysis) happens row-by-row. If Row 1 of your matrix is NSRP1_S194, Row 1 of your mapping file must also be NSRP1_S194.
-#match() calculates exactly which row position in pmapping11 corresponds to the row names in pdat.de.
-#slice() then physically picks up those rows and puts them in that exact order.
-#slice() lets you index rows by their (integer) locations.
+# Create the new dataframe with the corrected spelling
+# Explicitly use dplyr's select function to avoid package conflicts
+pmappingde <- pdat.de %>%
+  dplyr::select(SiteID, Symbol_Site)
+
+# Verify the new dataframe
+head(pmappingde)
+dim(pmappingde)
+#[1] 12033     2
+
+head(pdat.de)
+dim(pdat.de)
+
+pdat.de_NAfilter_all<-pdat.de
+head(pdat.de_NAfilter_all)
+dim(pdat.de_NAfilter_all)
+#[1] 12033    26
+
+sum(duplicated(pdat.de$SiteID))
+#0
+
+# 1. Assign the SiteID values directly to the row names
+rownames(pdat.de) <- pdat.de$SiteID
+
+# 2. Verify that both the row names and the column exist
+head(pdat.de)
+
+table(is.na(pdat.de$Symbol))
+#FALSE 
+#12033 
+
+head(pdat.de)
+dim(pdat.de)
+#[1] 12033    26
+pdat.de<-pdat.de[,-(19:26)]
+head(pdat.de)
+dim(pdat.de)
+#[1] 12033    18
+pdat.de<-as.matrix(pdat.de)
+head(pdat.de)
+dim(pdat.de)
 
 # Verify the result
 head(pmappingde)
-dim(pmappingde) # 12298 x 2
+dim(pmappingde) # 12033 x 2
 colnames(pmappingde) <- c('Accession','Symbol')
+head(pmappingde)
+dim(pmappingde) # 12033 x 2
 
 #-----------------------------------------------------------------------#
 #Final files for DE analysis
@@ -2449,12 +2593,11 @@ colnames(pmappingde) <- c('Accession','Symbol')
 head(pmapping11) #J_Has all columns for mapping reference
 dim(pmapping11)
 head(pmappingde) #Has only 2 columns for DEA
-dim(pmappingde) # 12298 x 2
+dim(pmappingde) # 12033 x 2
 
 head(pdat.de) #Median normalized matrix for DEA
 dim(pdat.de)
-dim(pmappingde) # 12298 x 2
-
+dim(pmappingde) # 12033 x 2
 
 #---------------------------------------------------------------------------------------------#
 #Step 2: Design and Contrast Matrix for Differential Expression Analysis using Limma trend
@@ -2732,6 +2875,7 @@ pcm_data #contrast matrix
 head(pdat.de)
 head(pdat.de1)
 head(pmappingde)
+type(pmappingde)
 pXa
 pcm_data
 pdea = top_table_results(pmappingde, pdat.de1, pXa, pcm_data, annotate = TRUE, trend = TRUE)
@@ -2745,8 +2889,8 @@ pgene.symbol = pdea$tt$Symbol #because we have symbol ids
 #strsplit(x, "\\."): Breaks a string like "ENSG000001.2" into two parts: [1] "ENSG000001" and [2] "2". and keeps 1st part [1]
 head(pgene.symbol)
 head(pdea$tt$Symbol)
-length(pgene.symbol) #[1] 12298
-length(pdea$tt$Symbol) #[1] 12298
+length(pgene.symbol) #[1] 12033
+length(pdea$tt$Symbol) #[1] 12033
 # both match
 head(pdea$tt$Accession)
 
@@ -2768,8 +2912,8 @@ ptmpa$Accession = pdea$tt$Accession[match(ptmpa$Symbol, pgene.symbol)] # Get the
 head(ptmpa$Accession)
 head(ptmpa)
 head(pdea$tt)
-nrow(ptmpa) #[1] 12289 agrregated duplicates based on median
-nrow(pdea$tt) #[1] 12298
+nrow(ptmpa) #[1] 12029 agrregated duplicates based on median
+nrow(pdea$tt) #[1] 12033
 
 pmappingde %>% 
   dplyr::filter(Symbol  == "AAAS_S495")
@@ -2777,21 +2921,30 @@ pmappingde %>%
   dplyr::filter(Symbol  == "AAK1_S249")
 ptmpa %>% 
   dplyr::filter(Symbol  == "AAAS_S495")
+pdea$tt %>% 
+  dplyr::filter(Symbol  == "AAAS_S495")
 ptmpa %>% 
   dplyr::filter(Symbol  == "AAK1_S249")
+pdea$tt %>% 
+  dplyr::filter(Symbol  == "AAK1_S249")
+
 #Matches with ptmpa
+
+nrow(ptmpa) #[1] 12029 agrregated duplicates based on median
+nrow(pdea$tt) #[1] 12033
+
 
 #head(tmp$Accession)
 pdea$tt = ptmpa #Replacing with aggregated data (aggregated duplicates based on median)
 #de$tt = tmp
 head(pdea$tt)
 #head(de$tt)
-nrow(pdea$tt) #[1] 12289 #Replaced pdea$tt with aggregated ptmpa (median of dupliccte symbols)
+nrow(pdea$tt) #[1] 12029 #Replaced pdea$tt with aggregated ptmpa (median of dupliccte symbols)
 
 head(pdea$tt)
 head(ptmpa)
-nrow(pdea$tt) #[1] 12289
-nrow(ptmpa) #[1] 12289
+nrow(pdea$tt) #[1] 12029
+nrow(ptmpa) #[1] 12029
 #Both match
 
 #================================================================================================================#
@@ -2819,7 +2972,7 @@ nrow(ptmpa) #[1] 12289
 #----------------------------------------------------------------------------------------------------#
 
 head(pdea$tt)
-nrow(pdea$tt) #[1] 12289
+nrow(pdea$tt) #[1] 12029
 logFCPprot<-pdea$tt
 head(logFCPprot)
 logFCPprot<-as.data.frame(logFCPprot)
@@ -2827,10 +2980,104 @@ head(logFCPprot)
 type(logFCPprot)
 library("writexl") 
 #install.packages("writexl")
-#write_xlsx(logFCPprot,"C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\logFCPhospoprot.xlsx")
-dim(logFCPprot) #[1] 12289    24
+write_xlsx(logFCPprot,"C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\logFCPhospoprot_07062026_updated.xlsx")
+dim(logFCPprot) #[1] 12029    24
 
 #============================================================================================================================================================================================#
+
+#=================================#
+# Bar Plot to see missing values
+#=================================#
+
+library(ggplot2)
+library(scales)
+# Create the data frame with your numbers
+attrition_data <- data.frame(
+  Step = factor(c("1. Raw Peptides", "2. Missing Value Filter_Accession", "3. Summation of Duplicate Accessions", "4.Filtering missing Symbol", "5. Median aggregation_duplicate symbols"),
+                levels = c("1. Raw Peptides", "2. Missing Value Filter_Accession", "3. Summation of Duplicate Accessions", "4.Filtering missing Symbol", "5. Median aggregation_duplicate symbols")),
+  Count = c(32559, 16748, 12289,12033,12029)
+)
+# Levels = This is the exact order I want these categories displayed
+
+#view(attrition_data)
+# Plot the Bar Chart
+ggplot(attrition_data, aes(x = Step, y = Count, fill = Step)) + 
+  #aes(fill = Step) - Color depends on data, Creates different colors for categories
+  
+  geom_bar(stat = "identity", width = 0.6, show.legend = FALSE) + 
+  #geom_bar() creates a bar plot in ggplot2
+  #stat = "identity" is a statistical transformation that tells R to use 
+  #the exact values provided in the data frame without performing any additional 
+  #calculations, such as counting or binning
+  
+  geom_text(aes(label = comma(Count)), vjust = -0.5, size = 5, fontface = "bold") +
+  #label = comma(Count) is used to format numeric labels (like counts or totals) 
+  #by adding thousands-separator commas (e.g., changing 1000000 to 1,000,000) 
+  #for better readability.
+  
+  scale_fill_brewer(palette = "Blues") +
+  #This above line controls the color palette used for the fill aesthetic in ggplot2.
+  
+  labs(title = "Phosphoproteomics Peptide Attrition Summary",
+       subtitle = "Data reduction from raw identification to unique site filtering after median summarization of duplicates",
+       x = "Processing Stage",
+       y = "Number of Peptides") +
+  
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+        plot.subtitle = element_text(hjust = 0.5, size = 12)
+  ) #theme= Adjust default theme to what's needed
+
+library(ggplot2)
+library(scales)
+# Create the data frame with your numbers
+attrition_data <- data.frame(
+  Step = factor(c("Raw Peptides", "Filtered Missing values and Duplicates"),
+                levels = c("Raw Peptides", "Filtered Missing values and Duplicates")),
+  Count = c(32559,12029)
+)
+# Levels = This is the exact order I want these categories displayed
+
+#view(attrition_data)
+# Plot the Bar Chart
+ggplot(attrition_data, aes(x = Step, y = Count, fill = Step)) + 
+  #aes(fill = Step) - Color depends on data, Creates different colors for categories
+  
+  geom_bar(stat = "identity", width = 0.6, show.legend = FALSE) + 
+  #geom_bar() creates a bar plot in ggplot2
+  #stat = "identity" is a statistical transformation that tells R to use 
+  #the exact values provided in the data frame without performing any additional 
+  #calculations, such as counting or binning
+  
+  geom_text(aes(label = comma(Count)), vjust = -0.5, size = 5, fontface = "bold") +
+  #label = comma(Count) is used to format numeric labels (like counts or totals) 
+  #by adding thousands-separator commas (e.g., changing 1000000 to 1,000,000) 
+  #for better readability.
+  
+  scale_fill_brewer(palette = "Blue") +
+  #This above line controls the color palette used for the fill aesthetic in ggplot2.
+  
+  labs(title = "Phosphoproteomics Peptide Attrition Summary",
+       subtitle = "Data reduction from raw identification to unique site filtering after median summarization of duplicates",
+       x = "Processing Stage",
+       y = "Number of Peptides") +
+  
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+        plot.subtitle = element_text(hjust = 0.5, size = 12)
+  ) #theme= Adjust default theme to what's needed
+
+
+dim(pdat13) #[1] 32559    28 #has all rows after filtering only for High and medium FDR
+dim(pdat15) #[1] 24914    28 - has only rows where SiteID is not NA but have duplicate SiteID
+dim(pdat15_filtered_check) #[1] 16748    28 - After removing all zero rows to median summarize intensities 
+dim(pdat16.2) #[1] 12289   19  - No missing values and w/o duplicates SiteID (addition summarized) - after removing all 0 rows
+nrow(pdea$tt) #[1] 12029 #median summarized duplicate symbols for dea
+nrow(pdat.de1) #12033 #Filterd missing symbols after mapping
+
+#==================================================================================================================================================#
 
 #==================================================#
 # Volcano plots for p-value and adjusted p-values
@@ -2862,7 +3109,7 @@ plot(pdea$tt$GFPTEN.GFPCTRL, -log10(pdea$tt$P.Value.GFPTEN.GFPCTRL), pch=21, bg=
 abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
 abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
 axis(1, seq(-6,6,1))
-title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of p-values - GFP 10 min vs. GFP 0 min")
+title("Phosphoproteomics with Total Proteome Normalization \n Volcano plot of p-values - GFP 10 min vs. GFP 0 min", line = 2.0)
 
 # Log2 fold change and p-value cutoff
 lfc <- 0.58
@@ -2893,7 +3140,7 @@ plot(pdea$tt$GFPTEN.GFPCTRL, -log10(pdea$tt$adj.P.Val.GFPTEN.GFPCTRL), pch=21, b
 abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
 abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
 axis(1, seq(-6,6,1))
-title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of adjusted p-values - GFP 10 min vs. GFP 0 min")
+title("Phosphoproteomics with Total Proteome Normalization \n Volcano plot of adjusted p-values - GFP 10 min vs. GFP 0 min", line = 2.0)
 
 # Log2 fold change and p-value cutoff
 lfc <- 0.58
@@ -3008,7 +3255,7 @@ plot(pdea$tt$OGTTEN.OGTCTRL, -log10(pdea$tt$P.Value.OGTTEN.OGTCTRL), pch=21, bg=
 abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
 abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
 axis(1, seq(-6,6,1))
-title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of p-values - OGT KD 605-10 min vs. OGT KD 605-0 min")
+title("Phosphoproteomics with Total Proteome Normalization \n Volcano plot of p-values - OGT KD 605-10 min vs. OGT KD 605-0 min", line = 2.0)
 
 # Log2 fold change and p-value cutoff
 lfc <- 0.58
@@ -3038,7 +3285,7 @@ plot(pdea$tt$OGTTEN.OGTCTRL, -log10(pdea$tt$adj.P.Val.OGTTEN.OGTCTRL), pch=21, b
 abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
 abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
 axis(1, seq(-6,6,1))
-title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of adjusted p-values - OGT KD 605-10 min vs. OGT KD 605-0 min")
+title("Phosphoproteomics with Total Proteome Normalization \n Volcano plot of adjusted p-values - OGT KD 605-10 min vs. OGT KD 605-0 min", line = 2.0)
 
 # Log2 fold change and p-value cutoff
 lfc <- 0.58
@@ -3081,7 +3328,7 @@ plot(pdea$tt$ROGTTEN.ROGTCTRL, -log10(pdea$tt$P.Value.ROGTTEN.ROGTCTRL), pch=21,
 abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
 abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
 axis(1, seq(-6,6,1))
-title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of p-values - OGT KD 606-10 min vs. OGT KD 606-0 min")
+title("Phosphoproteomics with Total Proteome Normalization \n Volcano plot of p-values - OGT KD 606-10 min vs. OGT KD 606-0 min", line = 2.0)
 
 # Log2 fold change and p-value cutoff
 lfc <- 0.58
@@ -3111,7 +3358,7 @@ plot(pdea$tt$ROGTTEN.ROGTCTRL, -log10(pdea$tt$adj.P.Val.ROGTTEN.ROGTCTRL), pch=2
 abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
 abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
 axis(1, seq(-6,6,1))
-title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of adjusted p-values - OGT KD 606-10 min vs. OGT KD 606-0 min")
+title("Phosphoproteomics with Total Proteome Normalization \n Volcano plot of adjusted p-values - OGT KD 606-10 min vs. OGT KD 606-0 min", line = 2.0)
 
 # Log2 fold change and p-value cutoff
 lfc <- 0.58
@@ -3154,7 +3401,7 @@ plot(pdea$tt$OGTCTRL.GFPCTRL, -log10(pdea$tt$P.Value.OGTCTRL.GFPCTRL), pch=21, b
 abline(v=seq(-2,2,1), col="lightgray", lty="dotted")
 abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
 axis(1, seq(-2,2,1))
-title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of p-values - OGT KD 605-0 min vs. GFP 0 min")
+title("Phosphoproteomics with Total Proteome Normalization \n Volcano plot of p-values - OGT KD 605-0 min vs. GFP 0 min", line = 2.0)
 
 # Log2 fold change and p-value cutoff
 lfc <- 0.58
@@ -3185,7 +3432,7 @@ plot(pdea$tt$OGTCTRL.GFPCTRL, -log10(pdea$tt$adj.P.Val.OGTCTRL.GFPCTRL), pch=21,
 abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
 abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
 axis(1, seq(-6,6,1))
-title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of adjusted p-values - OGT KD 605-0 min vs. GFP 0 min")
+title("Phosphoproteomics with Total Proteome Normalization \n Volcano plot of adjusted p-values - OGT KD 605-0 min vs. GFP 0 min", line = 2.0)
 
 # Log2 fold change and p-value cutoff
 lfc <- 0.58
@@ -3247,7 +3494,7 @@ plot(pdea$tt$OGTTEN.GFPTEN, -log10(pdea$tt$P.Value.OGTTEN.GFPTEN), pch=21, bg="l
 abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
 abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
 axis(1, seq(-6,6,1))
-title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of p-values - OGT KD 605-10 min vs. GFP 10 min")
+title("Phosphoproteomics with Total Proteome Normalization \n Volcano plot of p-values - OGT KD 605-10 min vs. GFP 10 min", line = 2.0)
 
 # Log2 fold change and p-value cutoff
 lfc <- 0.58
@@ -3277,7 +3524,7 @@ plot(pdea$tt$OGTTEN.GFPTEN, -log10(pdea$tt$adj.P.Val.OGTTEN.GFPTEN), pch=21, bg=
 abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
 abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
 axis(1, seq(-6,6,1))
-title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of adjusted p-values - OGT KD 605-10 min vs. GFP 10 min")
+title("Phosphoproteomics with Total Proteome Normalization \n Volcano plot of adjusted p-values - OGT KD 605-10 min vs. GFP 10 min", line = 2.0)
 
 # Log2 fold change and p-value cutoff
 lfc <- 0.58
@@ -3341,7 +3588,7 @@ plot(pdea$tt$ROGTCTRL.GFPCTRL, -log10(pdea$tt$P.Value.ROGTCTRL.GFPCTRL), pch=21,
 abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
 abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
 axis(1, seq(-6,6,1))
-title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of p-values - OGT KD 606-0 min vs. GFP 0 min")
+title("Phosphoproteomics with Total Proteome Normalization \n Volcano plot of p-values - OGT KD 606-0 min vs. GFP 0 min", line = 2.0)
 
 # Log2 fold change and p-value cutoff
 lfc <- 0.58
@@ -3372,7 +3619,7 @@ plot(pdea$tt$ROGTCTRL.GFPCTRL, -log10(pdea$tt$adj.P.Val.ROGTCTRL.GFPCTRL), pch=2
 abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
 abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
 axis(1, seq(-6,6,1))
-title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of adjusted p-values - OGT KD 606-0 min vs. GFP 0 min")
+title("Phosphoproteomics with Total Proteome Normalization \n Volcano plot of adjusted p-values - OGT KD 606-0 min vs. GFP 0 min", line = 2.0)
 
 # Log2 fold change and p-value cutoff
 lfc <- 0.58
@@ -3417,7 +3664,7 @@ plot(pdea$tt$ROGTTEN.GFPTEN, -log10(pdea$tt$P.Value.ROGTTEN.GFPTEN), pch=21, bg=
 abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
 abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
 axis(1, seq(-6,6,1))
-title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of p-values -  OGT KD 606-10 min vs. GFP 10 min")
+title("Phosphoproteomics with Total Proteome Normalization \n Volcano plot of p-values -  OGT KD 606-10 min vs. GFP 10 min", line = 2.0)
 
 # Log2 fold change and p-value cutoff
 lfc <- 0.58
@@ -3448,7 +3695,7 @@ plot(pdea$tt$ROGTTEN.GFPTEN, -log10(pdea$tt$adj.P.Val.ROGTTEN.GFPTEN), pch=21, b
 abline(v=seq(-6,6,1), col="lightgray", lty="dotted")
 abline(h=seq(0,ry[2],1), col="lightgray", lty="dotted")
 axis(1, seq(-6,6,1))
-title("Phosphoproteomics with Total Proteome Normalization - Volcano plot of adjusted p-values -  OGT KD 606-10 min vs. GFP 10 min")
+title("Phosphoproteomics with Total Proteome Normalization \n Volcano plot of adjusted p-values - OGT KD 606-10 min vs. GFP 10 min", line = 2.0)
 
 # Log2 fold change and p-value cutoff
 lfc <- 0.58
@@ -3488,6 +3735,11 @@ head(pdea2)
 pdea2$tt
 head(pdea2$tt)
 dim(pdea2$tt)
+
+#-----------------------------------------------------------------------------------------#
+
+#Old code without for loops:
+
 updownOGTTENGFPTEN<-cbind(pdea2$tt$OGTTEN.GFPTEN,pdea2$tt$adj.P.Val.OGTTEN.GFPTEN,pdea2$tt$Symbol)
 head(updownOGTTENGFPTEN)
 head(pdea2$tt)
@@ -3548,9 +3800,198 @@ sortupdownROGTTENGFPTEN<-as.data.frame(updownROGTTENGFPTEN[order(updownROGTTENGF
 head(sortupdownROGTTENGFPTEN)
 tail(sortupdownROGTTENGFPTEN)
 
-#========================================================================================================================================================================================#
+##-----------------------------------------------------------------------------------------##
+
+#Updated individual code
+
+# 1. Extract the columns as a clean data frame with numeric types intact
+updownOGTTENGFPTEN <- data.frame(
+  logFC.OGTTEN.GFPTEN = pdea2$tt$OGTTEN.GFPTEN,
+  adj.P.Val.OGTTEN.GFPTEN = pdea2$tt$adj.P.Val.OGTTEN.GFPTEN,
+  row.names = pdea2$tt$Symbol
+)
+head(updownOGTTENGFPTEN)
+# 2. Sort properly by the numeric adjusted p-value (increasing significance)
+sortupdownOGTTENGFPTEN <- updownOGTTENGFPTEN[order(updownOGTTENGFPTEN$adj.P.Val.OGTTEN.GFPTEN, decreasing = TRUE), ]
+head(sortupdownOGTTENGFPTEN)
+tail(sortupdownOGTTENGFPTEN)
+
+#For loop to do this for all 7 traetmnets:
+
+head(pdea2$tt)
+dim(pdea2$tt)
+
+#Old name:
+# 1. List your 7 specific treatment comparison names
+comparisons <- c(
+  "GFPTEN.GFPCTRL", 
+  "OGTTEN.OGTCTRL", 
+  "ROGTTEN.ROGTCTRL", 
+  "OGTCTRL.GFPCTRL", 
+  "OGTTEN.GFPTEN", 
+  "ROGTCTRL.GFPCTRL", 
+  "ROGTTEN.GFPTEN"
+)
+
+# 2. Run the loop to generate the 14 data frames
+for (comp in comparisons) {
+  
+  # Remove periods to match your exact requested variable style (e.g., OGTTENGFPTEN)
+  clean_name <- gsub("\\.", "", comp)
+  
+  # Define column identifiers based on your data structure
+  logfc_col  <- comp
+  adj_p_col  <- paste0("adj.P.Val.", comp)
+  
+  # Create the baseline unsorted data frame
+  raw_df <- data.frame(
+    logFC = pdea2$tt[[logfc_col]],
+    adj.P.Val = pdea2$tt[[adj_p_col]],
+    row.names = (as.character(pdea2$tt$Symbol))
+  )
+  
+  # Set the column names to explicitly match your format style
+  colnames(raw_df) <- c(paste0("logFC.", comp), paste0("adj.P.Val.", comp))
+  
+  # Create the sorted data frame (most significant p-values at the top)
+  sorted_df <- raw_df[order(raw_df[[adj_p_col]], decreasing = TRUE), ]
+  
+  # Define the 2 unique file/variable names for this treatment
+  unsorted_var_name <- paste0("updown", clean_name)
+  sorted_var_name   <- paste0("sortupdown", clean_name)
+  
+  # Send both data frames directly to your R environment workspace
+  assign(unsorted_var_name, raw_df, envir = .GlobalEnv)
+  assign(sorted_var_name, sorted_df, envir = .GlobalEnv)
+}
+
+head(updownGFPTENGFPCTRL)
+dim(updownGFPTENGFPCTRL)
+
+head(updownOGTCTRLGFPCTRL)
+dim(updownOGTCTRLGFPCTRL)
+
+head(updownOGTTENGFPTEN)
+dim(updownOGTTENGFPTEN)
+
+head(updownOGTTENOGTCTRL)
+dim(updownOGTTENOGTCTRL)
+
+head(updownROGTCTRLGFPCTRL)
+dim(updownROGTCTRLGFPCTRL)
+
+head(updownROGTTENGFPTEN)
+dim(updownROGTTENGFPTEN)
+
+head(updownROGTTENROGTCTRL)
+dim(updownROGTTENROGTCTRL)
+
+head(sortupdownGFPTENGFPCTRL)
+head(sortupdownOGTCTRLGFPCTRL)
+head(sortupdownOGTTENGFPTEN)
+head(sortupdownOGTTENOGTCTRL)
+head(sortupdownROGTCTRLGFPCTRL)
+head(sortupdownROGTTENGFPTEN)
+head(sortupdownROGTTENROGTCTRL)
+
+#New name:
+
+# 1. List your 7 specific treatment comparison names
+comparisons <- c(
+  "GFPTEN.GFPCTRL", 
+  "OGTTEN.OGTCTRL", 
+  "ROGTTEN.ROGTCTRL", 
+  "OGTCTRL.GFPCTRL", 
+  "OGTTEN.GFPTEN", 
+  "ROGTCTRL.GFPCTRL", 
+  "ROGTTEN.GFPTEN"
+)
+
+# 2. Run the loop to generate the 14 data frames
+for (comp in comparisons) {
+  
+  # Remove periods to match your exact requested variable style (e.g., OGTTENGFPTEN)
+  #clean_name <- gsub("\\.", "", comp)
+  
+  # Define column identifiers based on your data structure
+  logfc_col  <- comp
+  adj_p_col  <- paste0("adj.P.Val.", comp)
+  
+  # Create the baseline unsorted data frame
+  raw_df <- data.frame(
+    logFC = pdea2$tt[[logfc_col]],
+    adj.P.Val = pdea2$tt[[adj_p_col]],
+    row.names = (as.character(pdea2$tt$Symbol))
+  )
+  
+  # Set the column names to explicitly match your format style
+  colnames(raw_df) <- c(paste0("logFC.", comp), paste0("adj.P.Val.", comp))
+  
+  # Create the sorted data frame (most significant p-values at the top)
+  sorted_df <- raw_df[order(raw_df[[adj_p_col]], decreasing = TRUE), ]
+  
+  # Define the 2 unique file/variable names for this treatment
+  unsorted_var_name <- paste0("updown.", comp)
+  sorted_var_name   <- paste0("sort.updown.", comp)
+  
+  # Send both data frames directly to your R environment workspace
+  assign(unsorted_var_name, raw_df, envir = .GlobalEnv)
+  assign(sorted_var_name, sorted_df, envir = .GlobalEnv)
+}
+
+
+head(updown.GFPTEN.GFPCTRL)
+dim(updown.GFPTEN.GFPCTRL)
+
+head(updown.OGTCTRL.GFPCTRL)
+dim(updown.OGTCTRL.GFPCTRL)
+
+head(updown.OGTTEN.GFPTEN)
+dim(updown.OGTTEN.GFPTEN)
+
+head(updown.OGTTEN.OGTCTRL)
+dim(updown.OGTTEN.OGTCTRL)
+
+head(updown.ROGTCTRL.GFPCTRL)
+dim(updown.ROGTCTRL.GFPCTRL)
+
+head(updown.ROGTTEN.GFPTEN)
+dim(updown.ROGTTEN.GFPTEN)
+
+head(updown.ROGTTEN.ROGTCTRL)
+dim(updown.ROGTTEN.ROGTCTRL)
+
+head(pdea2$tt)
+
+#Sorted lists
+
+head(sort.updown.GFPTEN.GFPCTRL)
+dim(sort.updown.GFPTEN.GFPCTRL)
+
+head(sort.updown.OGTCTRL.GFPCTRL)
+dim(sort.updown.OGTCTRL.GFPCTRL)
+
+head(sort.updown.OGTTEN.GFPTEN)
+dim(sort.updown.OGTTEN.GFPTEN)
+
+head(sort.updown.OGTTEN.OGTCTRL)
+dim(sort.updown.OGTTEN.OGTCTRL)
+
+head(sort.updown.ROGTCTRL.GFPCTRL)
+dim(sort.updown.ROGTCTRL.GFPCTRL)
+
+head(sort.updown.ROGTTEN.GFPTEN)
+dim(sort.updown.ROGTTEN.GFPTEN)
+
+head(updown.ROGTTEN.ROGTCTRL)
+dim(updown.ROGTTEN.ROGTCTRL)
+
+#To remove non significant phospho sites:
 
 #NOT NEEDED FOR GSEA BUT CAN DO FOR KEGG AND GO
+
+#---------------------------------------------------------------------------------------#
+#Old code
 #remove genes not significant p>0.05 
 #OGTKD 605 10 MIN VS GFP 10 MIN
 remsortupdownOGTTENGFPTEN <- sortupdownOGTTENGFPTEN[!(sortupdownOGTTENGFPTEN$adj.P.Val.OGTTEN.GFPTEN>0.045), ]
@@ -3559,7 +4000,6 @@ remsortupdownOGTTENGFPTEN<-as.data.frame(remsortupdownOGTTENGFPTEN)
 head(remsortupdownOGTTENGFPTEN)
 dim(remsortupdownOGTTENGFPTEN)
 #3770 phospho-proteins < p=0.05 and FDR Filtration 
-
 #OGTKD 606 10 MIN VS GFP 10 MIN
 remsortupdownROGTTENGFPTEN <- sortupdownROGTTENGFPTEN[!(sortupdownROGTTENGFPTEN$adj.P.Val.ROGTTEN.GFPTEN>0.045), ]
 head(remsortupdownROGTTENGFPTEN)
@@ -3568,6 +4008,63 @@ head(remsortupdownROGTTENGFPTEN)
 dim(remsortupdownROGTTENGFPTEN)
 #[1] 5909    2 < p=0.05 and FDR Filtration 
 
+#-----------------------------------------------------------------------------------------#
+
+#New for loop for all 7 treatment comparisons filter for adj p val<0.045
+
+# 3. Loop through each comparison to filter out non-significant rows
+for (comp in comparisons) {
+  
+  # Construct the input variable name based on your custom script naming format
+  input_var_name  <- paste0("sort.updown.", comp)
+  
+  # Construct your new filtered output variable name
+  output_var_name <- paste0("rem.sort.updown.", comp)
+  
+  # Fetch the existing sorted data frame from your environment
+  sorted_df <- get(input_var_name, envir = .GlobalEnv)
+  
+  # Identify the exact name of the adjusted p-value column in your data frame
+  adj_p_col <- paste0("adj.P.Val.", comp)
+  
+  # Filter rows: Keep rows where p-value is <= 0.045
+  filtered_df <- sorted_df[which(sorted_df[[adj_p_col]] < 0.045), ]
+  
+  # Assign the filtered data frame back to your global environment
+  assign(output_var_name, filtered_df, envir = .GlobalEnv)
+}
+
+#Filtered Sorted lists
+
+head(rem.sort.updown.GFPTEN.GFPCTRL)
+dim(rem.sort.updown.GFPTEN.GFPCTRL)
+#[1] 4 2
+
+head(rem.sort.updown.OGTCTRL.GFPCTRL)
+dim(rem.sort.updown.OGTCTRL.GFPCTRL)
+#[1] 476   2
+
+head(rem.sort.updown.OGTTEN.GFPTEN)
+dim(rem.sort.updown.OGTTEN.GFPTEN)
+#[1] 3690    2
+
+head(rem.sort.updown.OGTTEN.OGTCTRL)
+dim(rem.sort.updown.OGTTEN.OGTCTRL)
+#[1] 1870    2
+
+head(rem.sort.updown.ROGTCTRL.GFPCTRL)
+dim(rem.sort.updown.ROGTCTRL.GFPCTRL)
+#[1] 6238    2
+
+head(rem.sort.updown.ROGTTEN.GFPTEN)
+dim(rem.sort.updown.ROGTTEN.GFPTEN)
+#[1] 5805    2
+
+head(rem.sort.updown.ROGTTEN.ROGTCTRL)
+dim(rem.sort.updown.ROGTTEN.ROGTCTRL)
+#[1] 102   2
+
+#---------------------------------------------------------------------------------------#
 #----------------------------#
 # Filter log FC > 0.58
 #----------------------------#
@@ -3649,6 +4146,124 @@ dim(logFCless2)
 #[1] 1838    2
 dim(logFCgreat2) #[1] 2315    2
 
+#-------------------------------------------------------------------------------------------------------#
+
+#---------------------------------------------------------------------------------------#
+# 3rd For Loop: Split filtered data into logFC > 0.58 and logFC < -0.58
+#---------------------------------------------------------------------------------------#
+
+# 1. Use your established list of 7 treatment comparison names
+comparisons <- c(
+  "GFPTEN.GFPCTRL", 
+  "OGTTEN.OGTCTRL", 
+  "ROGTTEN.ROGTCTRL", 
+  "OGTCTRL.GFPCTRL", 
+  "OGTTEN.GFPTEN", 
+  "ROGTCTRL.GFPCTRL", 
+  "ROGTTEN.GFPTEN"
+)
+
+# 2. Run the loop to generate the 14 logFC-filtered data frames
+for (comp in comparisons) {
+  
+  # Construct the input variable name from your previous loop
+  input_var_name <- paste0("rem.sort.updown.", comp)
+  
+  # Fetch the existing data frame from your global environment
+  current_df <- get(input_var_name, envir = .GlobalEnv)
+  
+  # Map the exact logFC column name matching your structure
+  logfc_col <- paste0("logFC.", comp)
+  
+  # Force conversion of the logFC column to numeric just to ensure safe subsetting
+  current_df[[logfc_col]] <- as.numeric(current_df[[logfc_col]])
+  
+  # --- Filter Up-regulated hits (> 0.58) ---
+  # which() naturally drops any structural NAs safely
+  up_df <- current_df[which(current_df[[logfc_col]] > 0.58), ]
+  
+  # --- Filter Down-regulated hits (< -0.58) ---
+  down_df <- current_df[which(current_df[[logfc_col]] < -0.58), ]
+  
+  # Define the new custom variable name strings matching your pattern
+  up_var_name   <- paste0("logFC.great.", comp)
+  down_var_name <- paste0("logFC.less.", comp)
+  
+  # Assign both resulting data frames directly to your workspace
+  assign(up_var_name, up_df, envir = .GlobalEnv)
+  assign(down_var_name, down_df, envir = .GlobalEnv)
+  
+  # Console status update to check your split sizes instantly
+  cat(paste0("Comparison: ", comp, "\n",
+             "  -> ", up_var_name, " Dim: [", nrow(up_df), " x ", ncol(up_df), "]\n",
+             "  -> ", down_var_name, " Dim: [", nrow(down_df), " x ", ncol(down_df), "]\n\n"))
+}
+
+#Comparison: GFPTEN.GFPCTRL
+
+#-> logFC.great.GFPTEN.GFPCTRL Dim: [0 x 2]
+#-> logFC.less.GFPTEN.GFPCTRL Dim: [4 x 2]
+
+head(logFC.great.GFPTEN.GFPCTRL)
+dim(logFC.great.GFPTEN.GFPCTRL)
+head(logFC.less.GFPTEN.GFPCTRL)
+dim(logFC.less.GFPTEN.GFPCTRL)
+
+#Comparison: OGTTEN.OGTCTRL
+#-> logFC.great.OGTTEN.OGTCTRL Dim: [901 x 2]
+#-> logFC.less.OGTTEN.OGTCTRL Dim: [485 x 2]
+
+head(logFC.great.OGTTEN.OGTCTRL)
+dim(logFC.great.OGTTEN.OGTCTRL)
+head(logFC.less.OGTTEN.OGTCTRL)
+dim(logFC.less.OGTTEN.OGTCTRL)
+
+#Comparison: ROGTTEN.ROGTCTRL
+#-> logFC.great.ROGTTEN.ROGTCTRL Dim: [55 x 2]
+#-> logFC.less.ROGTTEN.ROGTCTRL Dim: [33 x 2]
+
+head(logFC.great.ROGTTEN.ROGTCTRL)
+dim(logFC.great.ROGTTEN.ROGTCTRL)
+head(logFC.less.ROGTTEN.ROGTCTRL)
+dim(logFC.less.ROGTTEN.ROGTCTRL)
+
+#Comparison: OGTCTRL.GFPCTRL
+#-> logFC.great.OGTCTRL.GFPCTRL Dim: [202 x 2]
+#-> logFC.less.OGTCTRL.GFPCTRL Dim: [111 x 2]
+
+head(logFC.great.OGTCTRL.GFPCTRL)
+dim(logFC.great.OGTCTRL.GFPCTRL)
+head(logFC.less.OGTCTRL.GFPCTRL)
+dim(logFC.less.OGTCTRL.GFPCTRL)
+
+#Comparison: OGTTEN.GFPTEN
+#-> logFC.great.OGTTEN.GFPTEN Dim: [1355 x 2]
+#-> logFC.less.OGTTEN.GFPTEN Dim: [1071 x 2]
+
+head(logFC.great.OGTTEN.GFPTEN)
+dim(logFC.great.OGTTEN.GFPTEN)
+head(logFC.less.OGTTEN.GFPTEN)
+dim(logFC.less.OGTTEN.GFPTEN)
+
+#Comparison: ROGTCTRL.GFPCTRL
+#-> logFC.great.ROGTCTRL.GFPCTRL Dim: [2544 x 2]
+#-> logFC.less.ROGTCTRL.GFPCTRL Dim: [1870 x 2]
+
+head(logFC.great.ROGTCTRL.GFPCTRL)
+dim(logFC.great.ROGTCTRL.GFPCTRL)
+head(logFC.less.ROGTCTRL.GFPCTRL)
+dim(logFC.less.ROGTCTRL.GFPCTRL)
+
+#Comparison: ROGTTEN.GFPTEN
+#-> logFC.great.ROGTTEN.GFPTEN Dim: [2284 x 2]
+#-> logFC.less.ROGTTEN.GFPTEN Dim: [1793 x 2]
+
+head(logFC.great.ROGTTEN.GFPTEN)
+dim(logFC.great.ROGTTEN.GFPTEN)
+head(logFC.less.ROGTTEN.GFPTEN)
+dim(logFC.less.ROGTTEN.GFPTEN)
+
+#--------------------------------------------------------------------------------------------#
 #Prepare protlist for waterfall plot
 
 # Prepare the gene list
@@ -3677,6 +4292,67 @@ head(sortupdownOGTTENGFPTEN)
 names(prot.list2) <- rownames(sortupdownOGTTENGFPTEN)
 head(prot.list2)
 
+#--------------------------------------------------------------------------------------------#
+
+#---------------------------------------------------------------------------------------#
+# 4th For Loop: Create Named Numeric Rank Vectors for GSEA 
+#---------------------------------------------------------------------------------------#
+
+# 1. Use your established list of 7 treatment comparison names
+comparisons <- c(
+  "GFPTEN.GFPCTRL", 
+  "OGTTEN.OGTCTRL", 
+  "ROGTTEN.ROGTCTRL", 
+  "OGTCTRL.GFPCTRL", 
+  "OGTTEN.GFPTEN", 
+  "ROGTCTRL.GFPCTRL", 
+  "ROGTTEN.GFPTEN"
+)
+
+# 2. Run the loop to generate the 7 GSEA rank vectors
+for (comp in comparisons) {
+  
+  # Construct the input variable name from your first sorting loop
+  input_var_name <- paste0("sort.updown.", comp)
+  
+  # Fetch the data frame from your environment workspace
+  sorted_df <- get(input_var_name, envir = .GlobalEnv)
+  
+  # Identify the exact logFC column name for this treatment
+  logfc_col <- paste0("logFC.", comp)
+  
+  # Extract the column values as a clean numeric vector
+  gsea_vector <- as.numeric(sorted_df[[logfc_col]])
+  
+  # Name each element in the vector with its corresponding protein Symbol (the rownames)
+  names(gsea_vector) <- rownames(sorted_df)
+  
+  # Construct your specific requested output variable name format
+  output_var_name <- paste0("prot.list.sort.updown.", comp)
+  
+  # Assign the final named vector directly to your global environment workspace
+  assign(output_var_name, gsea_vector, envir = .GlobalEnv)
+  
+  # Print a confirmation message showing the vector length
+  cat(paste0("Created: ", output_var_name, " | Total Elements: ", length(gsea_vector), "\n"))
+}
+
+head(prot.list.sort.updown.GFPTEN.GFPCTRL) 
+head(prot.list.sort.updown.OGTTEN.OGTCTRL) 
+head(prot.list.sort.updown.ROGTTEN.ROGTCTRL) 
+head(prot.list.sort.updown.OGTCTRL.GFPCTRL)
+head(prot.list.sort.updown.OGTTEN.GFPTEN) 
+head(prot.list.sort.updown.ROGTCTRL.GFPCTRL) 
+head(prot.list.sort.updown.ROGTTEN.GFPTEN) 
+
+length(prot.list.sort.updown.GFPTEN.GFPCTRL) 
+length(prot.list.sort.updown.OGTTEN.OGTCTRL) 
+length(prot.list.sort.updown.ROGTTEN.ROGTCTRL) 
+length(prot.list.sort.updown.OGTCTRL.GFPCTRL)
+length(prot.list.sort.updown.OGTTEN.GFPTEN) 
+length(prot.list.sort.updown.ROGTCTRL.GFPCTRL) 
+length(prot.list.sort.updown.ROGTTEN.GFPTEN) 
+
 #=============================================================================================#
 #-------------------------------------------------------#
 # Waterfall plot - Plot of ranked Fold changes
@@ -3685,21 +4361,49 @@ head(prot.list2)
 # Barplot of ranked fold changes (waterfall plot)
 #barplot(sort(gene.list, decreasing = T),axisnames=FALSE,main="Plot of ranked gene Fold changes")
 
-head(prot.list)#606
-head(prot.list2)#605
-col <- ifelse(prot.list >0, "#BB1C1C", "#648FFF")
+#head(prot.list)#606
+#head(prot.list2)#605
+col <- ifelse(prot.list.sort.updown.OGTTEN.GFPTEN >0, "#BB1C1C", "#648FFF")
 
-#-------------------------------------------------------#
-#OGT KD 606 10 min vs GFP 10 min
-#-------------------------------------------------------#
+head(prot.list.sort.updown.GFPTEN.GFPCTRL) 
+head(prot.list.sort.updown.OGTTEN.OGTCTRL) 
+head(prot.list.sort.updown.ROGTTEN.ROGTCTRL) 
+head(prot.list.sort.updown.OGTCTRL.GFPCTRL)
+head(prot.list.sort.updown.OGTTEN.GFPTEN) 
+head(prot.list.sort.updown.ROGTCTRL.GFPCTRL) 
+head(prot.list.sort.updown.ROGTTEN.GFPTEN) 
 
-barplot(sort(prot.list, decreasing = T),axisnames=FALSE,main="Plot of ranked Fold changes of Phosphoproteome - OGT KD - 606 10 min vs. GFP - 10 min",  col=col, border=col, ylim=c(-4,4))
+prot.list.sort.updown.GFPTEN.GFPCTRL<-sort(prot.list.sort.updown.GFPTEN.GFPCTRL, decreasing = TRUE)
+prot.list.sort.updown.OGTTEN.OGTCTRL<-sort(prot.list.sort.updown.OGTTEN.OGTCTRL, decreasing = TRUE)
+prot.list.sort.updown.ROGTTEN.ROGTCTRL<-sort(prot.list.sort.updown.ROGTTEN.ROGTCTRL, decreasing = TRUE)
+prot.list.sort.updown.OGTCTRL.GFPCTRL<-sort(prot.list.sort.updown.OGTCTRL.GFPCTRL, decreasing = TRUE)
+prot.list.sort.updown.OGTTEN.GFPTEN<-sort(prot.list.sort.updown.OGTTEN.GFPTEN, decreasing = TRUE)
+prot.list.sort.updown.ROGTCTRL.GFPCTRL<-sort(prot.list.sort.updown.ROGTCTRL.GFPCTRL, decreasing = TRUE)
+prot.list.sort.updown.ROGTTEN.GFPTEN<-sort(prot.list.sort.updown.ROGTTEN.GFPTEN, decreasing = TRUE)
 
-#-------------------------------------------------------#
-#OGT KD 605 10 min vs GFP 10 min
-#-------------------------------------------------------#
+#col <- ifelse(prot.list >0, "#BB1C1C", "#648FFF")
+#barplot(sort(prot.list, decreasing = T),axisnames=FALSE,main="Plot of ranked Fold changes of Phosphoproteome - GFP - 10 min vs. GFP - 0 min",  col=col, border=col, ylim=c(-4,4), xlab="Ranked Phospho-sites", ylab="log2 Fold Change")
 
-barplot(sort(prot.list2, decreasing = T),axisnames=FALSE,main="Plot of ranked Fold changes of Phosphoproteome - OGT KD - 605 10 min vs. GFP - 10 min", col=col, border=col, ylim=c(-4,4))
+col <- ifelse(prot.list.sort.updown.GFPTEN.GFPCTRL >0, "#BB1C1C", "#648FFF")
+barplot(sort(prot.list.sort.updown.GFPTEN.GFPCTRL, decreasing = T),axisnames=FALSE,main="Plot of ranked Fold changes of Phosphoproteome - GFP - 10 min vs. GFP - 0 min",  col=col, border=col, ylim=c(-4,4), xlab="Ranked Phospho-sites", ylab="log2 Fold Change")
+
+col <- ifelse(prot.list.sort.updown.OGTTEN.OGTCTRL >0, "#BB1C1C", "#648FFF")
+barplot(sort(prot.list.sort.updown.OGTTEN.OGTCTRL, decreasing = T),axisnames=FALSE,main="Plot of ranked Fold changes of Phosphoproteome - OGT KD - 605 10 min vs. OGT KD - 605 0 min",  col=col, border=col, ylim=c(-4,4), xlab="Ranked Phospho-sites", ylab="log2 Fold Change")
+
+col <- ifelse(prot.list.sort.updown.ROGTTEN.ROGTCTRL >0, "#BB1C1C", "#648FFF")
+barplot(sort(prot.list.sort.updown.ROGTTEN.ROGTCTRL, decreasing = T),axisnames=FALSE,main="Plot of ranked Fold changes of Phosphoproteome - OGT KD - 606 10 min vs. OGT KD - 606 0 min",  col=col, border=col, ylim=c(-4,4), xlab="Ranked Phospho-sites", ylab="log2 Fold Change")
+
+col <- ifelse(prot.list.sort.updown.OGTCTRL.GFPCTRL >0, "#BB1C1C", "#648FFF")
+barplot(sort(prot.list.sort.updown.OGTCTRL.GFPCTRL, decreasing = T),axisnames=FALSE,main="Plot of ranked Fold changes of Phosphoproteome - OGT KD - 605 0 min vs. GFP - 0 min",  col=col, border=col, ylim=c(-4,4), xlab="Ranked Phospho-sites", ylab="log2 Fold Change")
+
+col <- ifelse(prot.list.sort.updown.OGTTEN.GFPTEN >0, "#BB1C1C", "#648FFF")
+barplot(sort(prot.list.sort.updown.OGTTEN.GFPTEN, decreasing = T),axisnames=FALSE,main="Plot of ranked Fold changes of Phosphoproteome - OGT KD - 605 10 min vs. GFP - 10 min", col=col, border=col, ylim=c(-4,4), xlab="Ranked Phospho-sites", ylab="log2 Fold Change")
+
+col <- ifelse(prot.list.sort.updown.ROGTCTRL.GFPCTRL >0, "#BB1C1C", "#648FFF")
+barplot(sort(prot.list.sort.updown.ROGTCTRL.GFPCTRL, decreasing = T),axisnames=FALSE,main="Plot of ranked Fold changes of Phosphoproteome - OGT KD - 606 0 min vs. GFP - 0 min",  col=col, border=col, ylim=c(-4,4), xlab="Ranked Phospho-sites", ylab="log2 Fold Change")
+
+col <- ifelse(prot.list.sort.updown.ROGTTEN.GFPTEN >0, "#BB1C1C", "#648FFF")
+barplot(sort(prot.list.sort.updown.ROGTTEN.GFPTEN, decreasing = T),axisnames=FALSE,main="Plot of ranked Fold changes of Phosphoproteome - OGT KD - 606 10 min vs. GFP - 10 min",  col=col, border=col, ylim=c(-4,4), xlab="Ranked Phospho-sites", ylab="log2 Fold Change")
 
 #points(pdea$tt[sigGenes1,]$ROGTTEN.GFPTEN,-log(pdea$tt[sigGenes1,]$adj.P.Val.ROGTTEN.GFPTEN,10),pch=20,col="#BB1C1C",cex=2)
 #points(pdea$tt[sigGenes2,]$ROGTTEN.GFPTEN,-log(pdea$tt[sigGenes2,]$adj.P.Val.ROGTTEN.GFPTEN,10),pch=20,col="#648FFF",cex=2)
@@ -3709,7 +4413,7 @@ barplot(sort(prot.list2, decreasing = T),axisnames=FALSE,main="Plot of ranked Fo
 #abline(h=mean(lib.size),lwd=2,col="red")
 #legend("bottomright", title="Treatment",legend=c("GFP-0","GFP-10","OGTKD-605-0","OGTKD-605-10","OGTKD-606-0","OGTKD-606-10"), fill=fill)
 
-#=================================================================================================================================================================================#
+#=============================================================================================================================================================================================================================================================================================================#
 
 #========================#
 #J_HEATMAP
@@ -3869,16 +4573,16 @@ color_mat
 # 2. Creating the Heatmap
 
 #pheatmap(color_mat, 
- #        cluster_cols = FALSE, 
-  #       cluster_rows = TRUE,
-   #      display_numbers = display_mat,  # Shows the text you want
-    #     number_color = "black",
-     #    color = colorRampPalette(c("#648FFF", "white", "#BB1C1C"))(256),
-      #   # Center the scale so 0 is white
+#        cluster_cols = FALSE, 
+#       cluster_rows = TRUE,
+#      display_numbers = display_mat,  # Shows the text you want
+#     number_color = "black",
+#    color = colorRampPalette(c("#648FFF", "white", "#BB1C1C"))(256),
+#   # Center the scale so 0 is white
 #         breaks = seq(-max(abs(plot_mat[,1])), max(abs(plot_mat[,1])), length.out = 257),
- #        labels_col = c(expression(bold("LogFC")), expression(bold("Adj. P-Value"))),
-  #       angle_col = 0,  # 0 degrees = perfectly horizontal
-   #      main = ("Phosphoproteomics Heatmap - OGT KD 605 10 min. vs. GFP 10 min."))
+#        labels_col = c(expression(bold("LogFC")), expression(bold("Adj. P-Value"))),
+#       angle_col = 0,  # 0 degrees = perfectly horizontal
+#      main = ("Phosphoproteomics Heatmap - OGT KD 605 10 min. vs. GFP 10 min."))
 
 
 pheatmap(color_mat, 
@@ -3906,4 +4610,549 @@ pheatmap(color_mat,
 #Maintenance of Clusters: This method only "swaps" branches at their shared nodes. It will never break a cluster, but it will ensure the "heavier" (redder) clusters are positioned at the top. 
 #Biostars
 #Biostars
+
+#=================================================================================================================================================================================#
+
+#========================#
+#J_HEATMAP
+#========================#
+
+head(prot.list.sort.updown.GFPTEN.GFPCTRL) 
+head(prot.list.sort.updown.OGTTEN.OGTCTRL) 
+head(prot.list.sort.updown.ROGTTEN.ROGTCTRL) 
+head(prot.list.sort.updown.OGTCTRL.GFPCTRL)
+head(prot.list.sort.updown.OGTTEN.GFPTEN) 
+head(prot.list.sort.updown.ROGTCTRL.GFPCTRL) 
+head(prot.list.sort.updown.ROGTTEN.GFPTEN) 
+
+head(sort.updown.GFPTEN.GFPCTRL) 
+head(sort.updown.OGTTEN.OGTCTRL) 
+head(sort.updown.ROGTTEN.ROGTCTRL) 
+head(sort.updown.OGTCTRL.GFPCTRL)
+head(sort.updown.OGTTEN.GFPTEN) 
+head(sort.updown.ROGTCTRL.GFPCTRL) 
+head(sort.updown.ROGTTEN.GFPTEN) 
+
+#head(prot.list)
+#head(sortupdownROGTTENGFPTEN)
+
+# 1. Filter for adjusted p-value < 0.045
+
+#filtered_df <- sorted_df[which(sorted_df[[adj_p_col]] < 0.045), ]
+
+head(rem.sort.updown.GFPTEN.GFPCTRL)
+dim(rem.sort.updown.GFPTEN.GFPCTRL)
+#[1] 4 2
+
+head(rem.sort.updown.OGTCTRL.GFPCTRL)
+dim(rem.sort.updown.OGTCTRL.GFPCTRL)
+#[1] 476   2
+
+head(rem.sort.updown.OGTTEN.GFPTEN)
+dim(rem.sort.updown.OGTTEN.GFPTEN)
+#[1] 3690    2
+
+head(rem.sort.updown.OGTTEN.OGTCTRL)
+dim(rem.sort.updown.OGTTEN.OGTCTRL)
+#[1] 1870    2
+
+head(rem.sort.updown.ROGTCTRL.GFPCTRL)
+dim(rem.sort.updown.ROGTCTRL.GFPCTRL)
+#[1] 6238    2
+
+head(rem.sort.updown.ROGTTEN.GFPTEN)
+dim(rem.sort.updown.ROGTTEN.GFPTEN)
+#[1] 5805    2
+
+head(rem.sort.updown.ROGTTEN.ROGTCTRL)
+dim(rem.sort.updown.ROGTTEN.ROGTCTRL)
+#[1] 102   2
+
+
+#sig_only <- sortupdownROGTTENGFPTEN[sortupdownROGTTENGFPTEN$adj.P.Val.ROGTTEN.GFPTEN < 0.045, ]
+#head(sig_only)
+#dim(sig_only)
+#[1] 5805    2
+
+# Sort sig_only so the highest LogFC values are at the top
+
+
+#---------------------------------------------------------------------------------------#
+# For Loop: Generate Data Files and Print Detailed Verification (Head & Dim)
+#---------------------------------------------------------------------------------------#
+
+# 1. Use your established list of 7 treatment comparison names
+comparisons <- c(
+  "GFPTEN.GFPCTRL", 
+  "OGTTEN.OGTCTRL", 
+  "ROGTTEN.ROGTCTRL", 
+  "OGTCTRL.GFPCTRL", 
+  "OGTTEN.GFPTEN", 
+  "ROGTCTRL.GFPCTRL", 
+  "ROGTTEN.GFPTEN"
+)
+
+# 2. Run the loop to generate the heatmap, subset, and full ordered files
+for (comp in comparisons) {
+  
+  # Construct the input variable name from your p-value filtering loop
+  input_var_name <- paste0("rem.sort.updown.", comp)
+  
+  # Fetch the data frame from your environment workspace
+  sig_only <- get(input_var_name, envir = .GlobalEnv)
+  
+  # Find the exact column names for logFC and adj.P.Val
+  logfc_col <- paste0("logFC.", comp)
+  adj_p_col <- paste0("adj.P.Val.", comp)
+  
+  # Skip comparisons with fewer than 40 total significant rows (like GFPTEN.GFPCTRL)
+  if (nrow(sig_only) < 40) {
+    cat(paste0("==============================================================\n",
+               "SKIPPING COMPARISON: ", comp, "\n",
+               "Only has ", nrow(sig_only), " significant rows (need at least 40).\n",
+               "==============================================================\n\n"))
+    next
+  }
+  
+  # --- Step 2: Get ALL Up-regulated sorted (Highest positive logFC to lowest) ---
+  ordered_up_all <- sig_only[order(as.numeric(sig_only[[logfc_col]]), decreasing = TRUE), ]
+  top_20_up       <- head(ordered_up_all, 20)
+  
+  # --- Step 3: Get ALL Down-regulated sorted (Lowest negative logFC to highest) ---
+  ordered_down_all <- sig_only[order(as.numeric(sig_only[[logfc_col]]), decreasing = FALSE), ]
+  top_20_down       <- head(ordered_down_all, 20)
+  
+  # --- Step 4: Combine top slices into the main heatmap data frame ---
+  heatmap_df <- rbind(top_20_up, top_20_down)
+  
+  # --- Step 5: Base numeric matrix (plot_mat) ---
+  plot_mat <- matrix(c(as.numeric(heatmap_df[[logfc_col]]), 
+                       as.numeric(heatmap_df[[adj_p_col]])), 
+                     ncol = 2)
+  colnames(plot_mat) <- c("LogFC", "Significance")
+  rownames(plot_mat) <- rownames(heatmap_df)
+  
+  # --- Step 6: Text Display Matrix (display_mat) ---
+  display_mat <- matrix("", nrow = nrow(plot_mat), ncol = ncol(plot_mat))
+  display_mat[, 1] <- as.character(round(plot_mat[, 1], 2)) 
+  display_mat[, 2] <- formatC(plot_mat[, 2], format = "e", digits = 2) 
+  colnames(display_mat) <- colnames(plot_mat)
+  rownames(display_mat) <- rownames(plot_mat)
+  
+  # --- Step 7: Color Matrix (color_mat) ---
+  color_mat <- cbind(plot_mat[, 1], plot_mat[, 1]) 
+  colnames(color_mat) <- colnames(plot_mat)
+  rownames(color_mat) <- rownames(plot_mat)
+  
+  # --- Step 8: Dynamic Variable Names ---
+  up_all_var_name   <- paste0("ordered.up.all.", comp)   
+  down_all_var_name <- paste0("ordered.down.all.", comp) 
+  up_var_name       <- paste0("top.20.up.", comp)         
+  down_var_name     <- paste0("top.20.down.", comp)       
+  df_var_name       <- paste0("heatmap.df.", comp)       
+  plot_var_name     <- paste0("plot.mat.", comp)
+  display_var_name  <- paste0("display.mat.", comp)
+  color_var_name    <- paste0("color.mat.", comp)
+  
+  # Send all individual files and matrices directly to your R workspace
+  assign(up_all_var_name, ordered_up_all, envir = .GlobalEnv)     
+  assign(down_all_var_name, ordered_down_all, envir = .GlobalEnv) 
+  assign(up_var_name, top_20_up, envir = .GlobalEnv)     
+  assign(down_var_name, top_20_down, envir = .GlobalEnv) 
+  assign(df_var_name, heatmap_df, envir = .GlobalEnv)   
+  assign(plot_var_name, plot_mat, envir = .GlobalEnv)
+  assign(display_var_name, display_mat, envir = .GlobalEnv)
+  assign(color_var_name, color_mat, envir = .GlobalEnv)
+  
+  # --- Step 9: EXPANDED REPORTING (Prints dim and head for all 8 files) ---
+  cat(paste0("\n========================================================================\n",
+             "VERIFICATION REPORT FOR COMPARISON: ", comp, "\n",
+             "========================================================================\n\n"))
+  
+  # 1. ordered.up.all
+  cat(paste0("Variable Name: ", up_all_var_name, " | Dimensions: ", paste(dim(ordered_up_all), collapse=" x "), "\n"))
+  print(head(ordered_up_all))
+  cat("\n----------------------------------------------------\n")
+  
+  # 2. ordered.down.all
+  cat(paste0("Variable Name: ", down_all_var_name, " | Dimensions: ", paste(dim(ordered_down_all), collapse=" x "), "\n"))
+  print(head(ordered_down_all))
+  cat("\n----------------------------------------------------\n")
+  
+  # 3. top.20.up
+  cat(paste0("Variable Name: ", up_var_name, " | Dimensions: ", paste(dim(top_20_up), collapse=" x "), "\n"))
+  print(head(top_20_up))
+  cat("\n----------------------------------------------------\n")
+  
+  # 4. top.20.down
+  cat(paste0("Variable Name: ", down_var_name, " | Dimensions: ", paste(dim(top_20_down), collapse=" x "), "\n"))
+  print(head(top_20_down))
+  cat("\n----------------------------------------------------\n")
+  
+  # 5. heatmap.df
+  cat(paste0("Variable Name: ", df_var_name, " | Dimensions: ", paste(dim(heatmap_df), collapse=" x "), "\n"))
+  print(head(heatmap_df))
+  cat("\n----------------------------------------------------\n")
+  
+  # 6. plot.mat
+  cat(paste0("Variable Name: ", plot_var_name, " | Dimensions: ", paste(dim(plot_mat), collapse=" x "), "\n"))
+  print(head(plot_mat))
+  cat("\n----------------------------------------------------\n")
+  
+  # 7. display.mat
+  cat(paste0("Variable Name: ", display_var_name, " | Dimensions: ", paste(dim(display_mat), collapse=" x "), "\n"))
+  print(head(display_mat))
+  cat("\n----------------------------------------------------\n")
+  
+  # 8. color.mat
+  cat(paste0("Variable Name: ", color_var_name, " | Dimensions: ", paste(dim(color_mat), collapse=" x "), "\n"))
+  print(head(color_mat))
+  cat("\n========================================================================\n\n")
+}
+
+#SKIPPING COMPARISON: GFPTEN.GFPCTRL
+#Only has 4 significant rows (need at least 40).
+
+#==============================#
+#Generating heatmap:
+#==============================#
+
+#------------------#
+#GFPTEN.GFPCTRL
+#------------------#
+#SKIPPING COMPARISON: GFPTEN.GFPCTRL
+#Only has 4 significant rows (need at least 40).
+rem.sort.updown.GFPTEN.GFPCTRL
+
+#------------------#
+#OGTTEN.OGTCTRL
+#------------------#
+
+library(pheatmap)
+pheatmap(color.mat.OGTTEN.OGTCTRL, #This is the core numerical matrix R uses to assign colors to the heatmap cells. As you set up in your previous loop, both columns in this matrix contain the LogFC values. This ensures that both columns of the heatmap match your expression color gradient, rather than having a p-value column distort the color scale.
+         cluster_cols = FALSE, #This turns off clustering for the columns. Your columns will stay exactly in the order you defined them (LogFC first, Adj. P-Value second) from left to right.
+         cluster_rows = TRUE, #This tells R to run hierarchical clustering on your phosphoproteins (rows) based on their expression profiles, drawing a dendrogram tree on the left side.
+         # This function reorders the branches by LogFC values
+         clustering_callback = function(hc, mat){ #This is a powerful customization step. Normally, pheatmap displays rows in a random default branch orientation. This function recalculates the row weights using your LogFC column (mat[,1]), reorders the dendrogram branches (stats::reorder), and flips them (rev(dend)) so your highly up-regulated sites sit cleanly at the top and down-regulated sites sit cleanly at the bottom.
+          
+           #The clustering_callback function acts as a smart sorting assistant that intercepts that tree before it is drawn and enforces a strict rule: "Keep similar things grouped together, but rotate the branches so higher numbers always go to the top."
+           #hc (The Cluster Tree): The raw hierarchical clustering object it calculated for your rows (hclust).mat (Your Matrix): The data matrix you passed into the plot (in your case, color.mat.OGTTEN.OGTCTRL).
+           #Step1: pheatmap calculates raw clustering tree, 
+           #Sends tree as 'hc', Sends data as 'mat'  function(hc, mat)
+           #wts <- mat[,1]   <── Grabs LogFC column from 'mat'
+           #dend <- reorder(hc, wts) <── Rearranges the 'hc' tree
+           #Step 2: pheatmap receives the beautifully sorted tree back ]
+           
+            # Calculate weights based on the first column (LogFC)
+           wts <- mat[,1] # It looks at your matrix (mat) and grabs the very first column ([,1]), which is your LogFC column. This tells the function that you want to use the intensity of the fold-change to guide how the branches should be rotated.
+           # Reorder the dendrogram: decreasing = TRUE puts high values at the top
+           dend <- stats::reorder(stats::as.dendrogram(hc), wts = wts, agglo.FUN = mean)# It looks at every branch split in the tree. It calculates the average LogFC (agglo.FUN = mean) for the proteins on both sides of the split using your wts. By default, stats::reorder puts the branch with the lower average value at the top, and the higher average value at the bottom.
+           # Reversing may be needed depending on default orientation
+           stats::as.hclust(rev(dend)) #Because the previous line put low values at the top and high values at the bottom, rev(dend) completely reverses that order. Now, your highest positive LogFC values (up-regulated) sit cleanly at the top, and your most negative LogFC values (down-regulated) slide cleanly to the bottom.
+         },
+         display_numbers = display.mat.OGTTEN.OGTCTRL, # Instead of printing the raw numbers used for coloring, R overlays the text labels from your custom string matrix onto the grid. This means your first column displays rounded LogFC values (e.g., 1.42), while your second column displays correctly formatted scientific p-values (e.g., 2.10e-03).
+         number_color = "black", 
+         color = colorRampPalette(c("#648FFF", "white", "#BB1C1C"))(256), #This creates a smooth 256-color gradient that transitions from your specific blue (#648FFF) for down-regulation, through white for neutral/no change, into your red (#BB1C1C) for up-regulation.
+         breaks = seq(-max(abs(color.mat.OGTTEN.OGTCTRL[,1])), max(abs(color.mat.OGTTEN.OGTCTRL[,1])), length.out = 257), #This forces your color bar to be perfectly symmetrical around zero. By taking the absolute maximum LogFC value in your data (max(abs(...))) and setting the limits from its negative value to its positive value, R guarantees that a LogFC of exactly 0 will always map to pure white. (Note: Make sure plot_mat matches your active matrix, or dynamically change this to color.mat.OGTTEN.OGTCTRL to prevent plotting errors).
+         labels_col = c(expression(bold("LogFC")), expression(bold("Adj. P-Value"))), #The expression(bold(...)) syntax allows you to apply mathematical/text formatting in base R graphics. This forces your column header titles to display in a crisp, bold font.
+         angle_col = 0, #This keeps your column headers completely horizontal (0 degrees) so they are easy to read, rather than being rotated at a 45 or 90-degree slant.
+         main = "Phosphoproteomics Heatmap (Top 20 / Total 1870 Phospho-sites) \n OGT KD 605 10 min. vs. OGT KD 605 0 min.")
+
+head(rem.sort.updown.OGTTEN.OGTCTRL)
+dim(rem.sort.updown.OGTTEN.OGTCTRL)
+#[1] 1870    2
+
+#------------------#
+#ROGTTEN.ROGTCTRL 
+#------------------#
+
+#library(pheatmap)
+pheatmap(color.mat.ROGTTEN.ROGTCTRL, #This is the core numerical matrix R uses to assign colors to the heatmap cells. As you set up in your previous loop, both columns in this matrix contain the LogFC values. This ensures that both columns of the heatmap match your expression color gradient, rather than having a p-value column distort the color scale.
+         cluster_cols = FALSE, #This turns off clustering for the columns. Your columns will stay exactly in the order you defined them (LogFC first, Adj. P-Value second) from left to right.
+         cluster_rows = TRUE, #This tells R to run hierarchical clustering on your phosphoproteins (rows) based on their expression profiles, drawing a dendrogram tree on the left side.
+         # This function reorders the branches by LogFC values
+         clustering_callback = function(hc, mat){ #This is a powerful customization step. Normally, pheatmap displays rows in a random default branch orientation. This function recalculates the row weights using your LogFC column (mat[,1]), reorders the dendrogram branches (stats::reorder), and flips them (rev(dend)) so your highly up-regulated sites sit cleanly at the top and down-regulated sites sit cleanly at the bottom.
+           
+           #The clustering_callback function acts as a smart sorting assistant that intercepts that tree before it is drawn and enforces a strict rule: "Keep similar things grouped together, but rotate the branches so higher numbers always go to the top."
+           #hc (The Cluster Tree): The raw hierarchical clustering object it calculated for your rows (hclust).mat (Your Matrix): The data matrix you passed into the plot (in your case, color.mat.ROGTTEN.ROGTCTRL).
+           #Step1: pheatmap calculates raw clustering tree, 
+           #Sends tree as 'hc', Sends data as 'mat'  function(hc, mat)
+           #wts <- mat[,1]   <── Grabs LogFC column from 'mat'
+           #dend <- reorder(hc, wts) <── Rearranges the 'hc' tree
+           #Step 2: pheatmap receives the beautifully sorted tree back ]
+           
+           # Calculate weights based on the first column (LogFC)
+           wts <- mat[,1] # It looks at your matrix (mat) and grabs the very first column ([,1]), which is your LogFC column. This tells the function that you want to use the intensity of the fold-change to guide how the branches should be rotated.
+           # Reorder the dendrogram: decreasing = TRUE puts high values at the top
+           dend <- stats::reorder(stats::as.dendrogram(hc), wts = wts, agglo.FUN = mean)# It looks at every branch split in the tree. It calculates the average LogFC (agglo.FUN = mean) for the proteins on both sides of the split using your wts. By default, stats::reorder puts the branch with the lower average value at the top, and the higher average value at the bottom.
+           # Reversing may be needed depending on default orientation
+           stats::as.hclust(rev(dend)) #Because the previous line put low values at the top and high values at the bottom, rev(dend) completely reverses that order. Now, your highest positive LogFC values (up-regulated) sit cleanly at the top, and your most negative LogFC values (down-regulated) slide cleanly to the bottom.
+         },
+         display_numbers = display.mat.ROGTTEN.ROGTCTRL, # Instead of printing the raw numbers used for coloring, R overlays the text labels from your custom string matrix onto the grid. This means your first column displays rounded LogFC values (e.g., 1.42), while your second column displays correctly formatted scientific p-values (e.g., 2.10e-03).
+         number_color = "black", 
+         color = colorRampPalette(c("#648FFF", "white", "#BB1C1C"))(256), #This creates a smooth 256-color gradient that transitions from your specific blue (#648FFF) for down-regulation, through white for neutral/no change, into your red (#BB1C1C) for up-regulation.
+         breaks = seq(-max(abs(color.mat.ROGTTEN.ROGTCTRL[,1])), max(abs(color.mat.ROGTTEN.ROGTCTRL[,1])), length.out = 257), #This forces your color bar to be perfectly symmetrical around zero. By taking the absolute maximum LogFC value in your data (max(abs(...))) and setting the limits from its negative value to its positive value, R guarantees that a LogFC of exactly 0 will always map to pure white. (Note: Make sure plot_mat matches your active matrix, or dynamically change this to color.mat.ROGTTEN.ROGTCTRL to prevent plotting errors).
+         labels_col = c(expression(bold("LogFC")), expression(bold("Adj. P-Value"))), #The expression(bold(...)) syntax allows you to apply mathematical/text formatting in base R graphics. This forces your column header titles to display in a crisp, bold font.
+         angle_col = 0, #This keeps your column headers completely horizontal (0 degrees) so they are easy to read, rather than being rotated at a 45 or 90-degree slant.
+         main = "Phosphoproteomics Heatmap (Top 20 / Total 102 Phospho-sites) \n OGT KD 606 10 min. vs. OGT KD 606 0 min.")
+
+head(rem.sort.updown.ROGTTEN.ROGTCTRL)
+dim(rem.sort.updown.ROGTTEN.ROGTCTRL)
+#[1] 102   2
+
+#------------------#
+#OGTCTRL.GFPCTRL 
+#------------------#
+
+#library(pheatmap)
+pheatmap(color.mat.OGTCTRL.GFPCTRL, #This is the core numerical matrix R uses to assign colors to the heatmap cells. As you set up in your previous loop, both columns in this matrix contain the LogFC values. This ensures that both columns of the heatmap match your expression color gradient, rather than having a p-value column distort the color scale.
+         cluster_cols = FALSE, #This turns off clustering for the columns. Your columns will stay exactly in the order you defined them (LogFC first, Adj. P-Value second) from left to right.
+         cluster_rows = TRUE, #This tells R to run hierarchical clustering on your phosphoproteins (rows) based on their expression profiles, drawing a dendrogram tree on the left side.
+         # This function reorders the branches by LogFC values
+         clustering_callback = function(hc, mat){ #This is a powerful customization step. Normally, pheatmap displays rows in a random default branch orientation. This function recalculates the row weights using your LogFC column (mat[,1]), reorders the dendrogram branches (stats::reorder), and flips them (rev(dend)) so your highly up-regulated sites sit cleanly at the top and down-regulated sites sit cleanly at the bottom.
+           
+           #The clustering_callback function acts as a smart sorting assistant that intercepts that tree before it is drawn and enforces a strict rule: "Keep similar things grouped together, but rotate the branches so higher numbers always go to the top."
+           #hc (The Cluster Tree): The raw hierarchical clustering object it calculated for your rows (hclust).mat (Your Matrix): The data matrix you passed into the plot (in your case, color.mat.OGTCTRL.GFPCTRL).
+           #Step1: pheatmap calculates raw clustering tree, 
+           #Sends tree as 'hc', Sends data as 'mat'  function(hc, mat)
+           #wts <- mat[,1]   <── Grabs LogFC column from 'mat'
+           #dend <- reorder(hc, wts) <── Rearranges the 'hc' tree
+           #Step 2: pheatmap receives the beautifully sorted tree back ]
+           
+           # Calculate weights based on the first column (LogFC)
+           wts <- mat[,1] # It looks at your matrix (mat) and grabs the very first column ([,1]), which is your LogFC column. This tells the function that you want to use the intensity of the fold-change to guide how the branches should be rotated.
+           # Reorder the dendrogram: decreasing = TRUE puts high values at the top
+           dend <- stats::reorder(stats::as.dendrogram(hc), wts = wts, agglo.FUN = mean)# It looks at every branch split in the tree. It calculates the average LogFC (agglo.FUN = mean) for the proteins on both sides of the split using your wts. By default, stats::reorder puts the branch with the lower average value at the top, and the higher average value at the bottom.
+           # Reversing may be needed depending on default orientation
+           stats::as.hclust(rev(dend)) #Because the previous line put low values at the top and high values at the bottom, rev(dend) completely reverses that order. Now, your highest positive LogFC values (up-regulated) sit cleanly at the top, and your most negative LogFC values (down-regulated) slide cleanly to the bottom.
+         },
+         display_numbers = display.mat.OGTCTRL.GFPCTRL, # Instead of printing the raw numbers used for coloring, R overlays the text labels from your custom string matrix onto the grid. This means your first column displays rounded LogFC values (e.g., 1.42), while your second column displays correctly formatted scientific p-values (e.g., 2.10e-03).
+         number_color = "black", 
+         color = colorRampPalette(c("#648FFF", "white", "#BB1C1C"))(256), #This creates a smooth 256-color gradient that transitions from your specific blue (#648FFF) for down-regulation, through white for neutral/no change, into your red (#BB1C1C) for up-regulation.
+         breaks = seq(-max(abs(color.mat.OGTCTRL.GFPCTRL[,1])), max(abs(color.mat.OGTCTRL.GFPCTRL[,1])), length.out = 257), #This forces your color bar to be perfectly symmetrical around zero. By taking the absolute maximum LogFC value in your data (max(abs(...))) and setting the limits from its negative value to its positive value, R guarantees that a LogFC of exactly 0 will always map to pure white. (Note: Make sure plot_mat matches your active matrix, or dynamically change this to color.mat.OGTCTRL.GFPCTRL to prevent plotting errors).
+         labels_col = c(expression(bold("LogFC")), expression(bold("Adj. P-Value"))), #The expression(bold(...)) syntax allows you to apply mathematical/text formatting in base R graphics. This forces your column header titles to display in a crisp, bold font.
+         angle_col = 0, #This keeps your column headers completely horizontal (0 degrees) so they are easy to read, rather than being rotated at a 45 or 90-degree slant.
+         main = "Phosphoproteomics Heatmap (Top 20 / Total 476 Phospho-sites) \n OGT KD 605 0 min. vs. GFP 0 min.")
+
+head(rem.sort.updown.OGTCTRL.GFPCTRL)
+dim(rem.sort.updown.OGTCTRL.GFPCTRL)
+#[1] 476   2
+
+#------------------#
+#OGTTEN.GFPTEN 
+#------------------#
+
+#library(pheatmap)
+pheatmap(color.mat.OGTTEN.GFPTEN, #This is the core numerical matrix R uses to assign colors to the heatmap cells. As you set up in your previous loop, both columns in this matrix contain the LogFC values. This ensures that both columns of the heatmap match your expression color gradient, rather than having a p-value column distort the color scale.
+         cluster_cols = FALSE, #This turns off clustering for the columns. Your columns will stay exactly in the order you defined them (LogFC first, Adj. P-Value second) from left to right.
+         cluster_rows = TRUE, #This tells R to run hierarchical clustering on your phosphoproteins (rows) based on their expression profiles, drawing a dendrogram tree on the left side.
+         # This function reorders the branches by LogFC values
+         clustering_callback = function(hc, mat){ #This is a powerful customization step. Normally, pheatmap displays rows in a random default branch orientation. This function recalculates the row weights using your LogFC column (mat[,1]), reorders the dendrogram branches (stats::reorder), and flips them (rev(dend)) so your highly up-regulated sites sit cleanly at the top and down-regulated sites sit cleanly at the bottom.
+           
+           #The clustering_callback function acts as a smart sorting assistant that intercepts that tree before it is drawn and enforces a strict rule: "Keep similar things grouped together, but rotate the branches so higher numbers always go to the top."
+           #hc (The Cluster Tree): The raw hierarchical clustering object it calculated for your rows (hclust).mat (Your Matrix): The data matrix you passed into the plot (in your case, color.mat.OGTTEN.GFPTEN).
+           #Step1: pheatmap calculates raw clustering tree, 
+           #Sends tree as 'hc', Sends data as 'mat'  function(hc, mat)
+           #wts <- mat[,1]   <── Grabs LogFC column from 'mat'
+           #dend <- reorder(hc, wts) <── Rearranges the 'hc' tree
+           #Step 2: pheatmap receives the beautifully sorted tree back ]
+           
+           # Calculate weights based on the first column (LogFC)
+           wts <- mat[,1] # It looks at your matrix (mat) and grabs the very first column ([,1]), which is your LogFC column. This tells the function that you want to use the intensity of the fold-change to guide how the branches should be rotated.
+           # Reorder the dendrogram: decreasing = TRUE puts high values at the top
+           dend <- stats::reorder(stats::as.dendrogram(hc), wts = wts, agglo.FUN = mean)# It looks at every branch split in the tree. It calculates the average LogFC (agglo.FUN = mean) for the proteins on both sides of the split using your wts. By default, stats::reorder puts the branch with the lower average value at the top, and the higher average value at the bottom.
+           # Reversing may be needed depending on default orientation
+           stats::as.hclust(rev(dend)) #Because the previous line put low values at the top and high values at the bottom, rev(dend) completely reverses that order. Now, your highest positive LogFC values (up-regulated) sit cleanly at the top, and your most negative LogFC values (down-regulated) slide cleanly to the bottom.
+         },
+         display_numbers = display.mat.OGTTEN.GFPTEN, # Instead of printing the raw numbers used for coloring, R overlays the text labels from your custom string matrix onto the grid. This means your first column displays rounded LogFC values (e.g., 1.42), while your second column displays correctly formatted scientific p-values (e.g., 2.10e-03).
+         number_color = "black", 
+         color = colorRampPalette(c("#648FFF", "white", "#BB1C1C"))(256), #This creates a smooth 256-color gradient that transitions from your specific blue (#648FFF) for down-regulation, through white for neutral/no change, into your red (#BB1C1C) for up-regulation.
+         breaks = seq(-max(abs(color.mat.OGTTEN.GFPTEN[,1])), max(abs(color.mat.OGTTEN.GFPTEN[,1])), length.out = 257), #This forces your color bar to be perfectly symmetrical around zero. By taking the absolute maximum LogFC value in your data (max(abs(...))) and setting the limits from its negative value to its positive value, R guarantees that a LogFC of exactly 0 will always map to pure white. (Note: Make sure plot_mat matches your active matrix, or dynamically change this to color.mat.OGTTEN.GFPTEN to prevent plotting errors).
+         labels_col = c(expression(bold("LogFC")), expression(bold("Adj. P-Value"))), #The expression(bold(...)) syntax allows you to apply mathematical/text formatting in base R graphics. This forces your column header titles to display in a crisp, bold font.
+         angle_col = 0, #This keeps your column headers completely horizontal (0 degrees) so they are easy to read, rather than being rotated at a 45 or 90-degree slant.
+         main = "Phosphoproteomics Heatmap (Top 20 / Total 3690 Phospho-sites) \n OGT KD 605 10 min. vs. GFP 10 min.")
+
+head(rem.sort.updown.OGTTEN.GFPTEN)
+dim(rem.sort.updown.OGTTEN.GFPTEN)
+#[1] 3690    2
+
+#------------------#
+#ROGTCTRL.GFPCTRL 
+#------------------#
+
+#library(pheatmap)
+pheatmap(color.mat.ROGTCTRL.GFPCTRL, #This is the core numerical matrix R uses to assign colors to the heatmap cells. As you set up in your previous loop, both columns in this matrix contain the LogFC values. This ensures that both columns of the heatmap match your expression color gradient, rather than having a p-value column distort the color scale.
+         cluster_cols = FALSE, #This turns off clustering for the columns. Your columns will stay exactly in the order you defined them (LogFC first, Adj. P-Value second) from left to right.
+         cluster_rows = TRUE, #This tells R to run hierarchical clustering on your phosphoproteins (rows) based on their expression profiles, drawing a dendrogram tree on the left side.
+         # This function reorders the branches by LogFC values
+         clustering_callback = function(hc, mat){ #This is a powerful customization step. Normally, pheatmap displays rows in a random default branch orientation. This function recalculates the row weights using your LogFC column (mat[,1]), reorders the dendrogram branches (stats::reorder), and flips them (rev(dend)) so your highly up-regulated sites sit cleanly at the top and down-regulated sites sit cleanly at the bottom.
+           
+           #The clustering_callback function acts as a smart sorting assistant that intercepts that tree before it is drawn and enforces a strict rule: "Keep similar things grouped together, but rotate the branches so higher numbers always go to the top."
+           #hc (The Cluster Tree): The raw hierarchical clustering object it calculated for your rows (hclust).mat (Your Matrix): The data matrix you passed into the plot (in your case, color.mat.ROGTCTRL.GFPCTRL).
+           #Step1: pheatmap calculates raw clustering tree, 
+           #Sends tree as 'hc', Sends data as 'mat'  function(hc, mat)
+           #wts <- mat[,1]   <── Grabs LogFC column from 'mat'
+           #dend <- reorder(hc, wts) <── Rearranges the 'hc' tree
+           #Step 2: pheatmap receives the beautifully sorted tree back ]
+           
+           # Calculate weights based on the first column (LogFC)
+           wts <- mat[,1] # It looks at your matrix (mat) and grabs the very first column ([,1]), which is your LogFC column. This tells the function that you want to use the intensity of the fold-change to guide how the branches should be rotated.
+           # Reorder the dendrogram: decreasing = TRUE puts high values at the top
+           dend <- stats::reorder(stats::as.dendrogram(hc), wts = wts, agglo.FUN = mean)# It looks at every branch split in the tree. It calculates the average LogFC (agglo.FUN = mean) for the proteins on both sides of the split using your wts. By default, stats::reorder puts the branch with the lower average value at the top, and the higher average value at the bottom.
+           # Reversing may be needed depending on default orientation
+           stats::as.hclust(rev(dend)) #Because the previous line put low values at the top and high values at the bottom, rev(dend) completely reverses that order. Now, your highest positive LogFC values (up-regulated) sit cleanly at the top, and your most negative LogFC values (down-regulated) slide cleanly to the bottom.
+         },
+         display_numbers = display.mat.ROGTCTRL.GFPCTRL, # Instead of printing the raw numbers used for coloring, R overlays the text labels from your custom string matrix onto the grid. This means your first column displays rounded LogFC values (e.g., 1.42), while your second column displays correctly formatted scientific p-values (e.g., 2.10e-03).
+         number_color = "black", 
+         color = colorRampPalette(c("#648FFF", "white", "#BB1C1C"))(256), #This creates a smooth 256-color gradient that transitions from your specific blue (#648FFF) for down-regulation, through white for neutral/no change, into your red (#BB1C1C) for up-regulation.
+         breaks = seq(-max(abs(color.mat.ROGTCTRL.GFPCTRL[,1])), max(abs(color.mat.ROGTCTRL.GFPCTRL[,1])), length.out = 257), #This forces your color bar to be perfectly symmetrical around zero. By taking the absolute maximum LogFC value in your data (max(abs(...))) and setting the limits from its negative value to its positive value, R guarantees that a LogFC of exactly 0 will always map to pure white. (Note: Make sure plot_mat matches your active matrix, or dynamically change this to color.mat.ROGTCTRL.GFPCTRL to prevent plotting errors).
+         labels_col = c(expression(bold("LogFC")), expression(bold("Adj. P-Value"))), #The expression(bold(...)) syntax allows you to apply mathematical/text formatting in base R graphics. This forces your column header titles to display in a crisp, bold font.
+         angle_col = 0, #This keeps your column headers completely horizontal (0 degrees) so they are easy to read, rather than being rotated at a 45 or 90-degree slant.
+         main = "Phosphoproteomics Heatmap (Top 20 / Total 6238 Phospho-sites) \n OGT KD 606 0 min. vs. GFP 0 min.")
+
+head(rem.sort.updown.ROGTCTRL.GFPCTRL)
+dim(rem.sort.updown.ROGTCTRL.GFPCTRL)
+#[1] 6238    2
+
+#------------------#
+#ROGTTEN.GFPTEN
+#------------------#
+
+#library(pheatmap)
+pheatmap(color.mat.ROGTTEN.GFPTEN, #This is the core numerical matrix R uses to assign colors to the heatmap cells. As you set up in your previous loop, both columns in this matrix contain the LogFC values. This ensures that both columns of the heatmap match your expression color gradient, rather than having a p-value column distort the color scale.
+         cluster_cols = FALSE, #This turns off clustering for the columns. Your columns will stay exactly in the order you defined them (LogFC first, Adj. P-Value second) from left to right.
+         cluster_rows = TRUE, #This tells R to run hierarchical clustering on your phosphoproteins (rows) based on their expression profiles, drawing a dendrogram tree on the left side.
+         # This function reorders the branches by LogFC values
+         clustering_callback = function(hc, mat){ #This is a powerful customization step. Normally, pheatmap displays rows in a random default branch orientation. This function recalculates the row weights using your LogFC column (mat[,1]), reorders the dendrogram branches (stats::reorder), and flips them (rev(dend)) so your highly up-regulated sites sit cleanly at the top and down-regulated sites sit cleanly at the bottom.
+           
+           #The clustering_callback function acts as a smart sorting assistant that intercepts that tree before it is drawn and enforces a strict rule: "Keep similar things grouped together, but rotate the branches so higher numbers always go to the top."
+           #hc (The Cluster Tree): The raw hierarchical clustering object it calculated for your rows (hclust).mat (Your Matrix): The data matrix you passed into the plot (in your case, color.mat.ROGTTEN.GFPTEN).
+           #Step1: pheatmap calculates raw clustering tree, 
+           #Sends tree as 'hc', Sends data as 'mat'  function(hc, mat)
+           #wts <- mat[,1]   <── Grabs LogFC column from 'mat'
+           #dend <- reorder(hc, wts) <── Rearranges the 'hc' tree
+           #Step 2: pheatmap receives the beautifully sorted tree back ]
+           
+           # Calculate weights based on the first column (LogFC)
+           wts <- mat[,1] # It looks at your matrix (mat) and grabs the very first column ([,1]), which is your LogFC column. This tells the function that you want to use the intensity of the fold-change to guide how the branches should be rotated.
+           # Reorder the dendrogram: decreasing = TRUE puts high values at the top
+           dend <- stats::reorder(stats::as.dendrogram(hc), wts = wts, agglo.FUN = mean)# It looks at every branch split in the tree. It calculates the average LogFC (agglo.FUN = mean) for the proteins on both sides of the split using your wts. By default, stats::reorder puts the branch with the lower average value at the top, and the higher average value at the bottom.
+           # Reversing may be needed depending on default orientation
+           stats::as.hclust(rev(dend)) #Because the previous line put low values at the top and high values at the bottom, rev(dend) completely reverses that order. Now, your highest positive LogFC values (up-regulated) sit cleanly at the top, and your most negative LogFC values (down-regulated) slide cleanly to the bottom.
+         },
+         display_numbers = display.mat.ROGTTEN.GFPTEN, # Instead of printing the raw numbers used for coloring, R overlays the text labels from your custom string matrix onto the grid. This means your first column displays rounded LogFC values (e.g., 1.42), while your second column displays correctly formatted scientific p-values (e.g., 2.10e-03).
+         number_color = "black", 
+         color = colorRampPalette(c("#648FFF", "white", "#BB1C1C"))(256), #This creates a smooth 256-color gradient that transitions from your specific blue (#648FFF) for down-regulation, through white for neutral/no change, into your red (#BB1C1C) for up-regulation.
+         breaks = seq(-max(abs(color.mat.ROGTTEN.GFPTEN[,1])), max(abs(color.mat.ROGTTEN.GFPTEN[,1])), length.out = 257), #This forces your color bar to be perfectly symmetrical around zero. By taking the absolute maximum LogFC value in your data (max(abs(...))) and setting the limits from its negative value to its positive value, R guarantees that a LogFC of exactly 0 will always map to pure white. (Note: Make sure plot_mat matches your active matrix, or dynamically change this to color.mat.ROGTTEN.GFPTEN to prevent plotting errors).
+         labels_col = c(expression(bold("LogFC")), expression(bold("Adj. P-Value"))), #The expression(bold(...)) syntax allows you to apply mathematical/text formatting in base R graphics. This forces your column header titles to display in a crisp, bold font.
+         angle_col = 0, #This keeps your column headers completely horizontal (0 degrees) so they are easy to read, rather than being rotated at a 45 or 90-degree slant.
+         main = "Phosphoproteomics Heatmap (Top 20 / Total 5805 Phospho-sites) \n OGT KD 606 10 min. vs. GFP 10 min.")
+
+head(rem.sort.updown.ROGTTEN.GFPTEN)
+dim(rem.sort.updown.ROGTTEN.GFPTEN)
+#[1] 5805    2
+
+#======================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================#
+
+#==========================#
+#J_Downstream Analysis
+#==========================#
+#J_KSEA
+#=======#
+
+# ---------------------------------------------------------------------------------------#
+# For Loop: Run KSEA (Kinase-Substrate Enrichment Analysis) for All 7 Comparisons
+# ---------------------------------------------------------------------------------------#
+# Install KSEAapp if you haven't already:
+install.packages("KSEAapp")
+library(KSEAapp)
+
+# 1. Use your established list of 7 treatment comparison names
+comparisons <- c(
+  "GFPTEN.GFPCTRL", 
+  "OGTTEN.OGTCTRL", 
+  "ROGTTEN.ROGTCTRL", 
+  "OGTCTRL.GFPCTRL", 
+  "OGTTEN.GFPTEN", 
+  "ROGTCTRL.GFPCTRL", 
+  "ROGTTEN.GFPTEN"
+)
+
+# 2. Run the loop to process KSEA
+for (comp in comparisons) {
+  
+  # Identify column names in your original pdea2$tt data frame
+  logfc_col <- comp
+  p_col     <- paste0("P.Value.", comp) # KSEA uses raw P.Value, not adjusted
+  
+  # --- Step A: Reconstruct a clean dataset formatted exactly for KSEAapp ---
+  # KSEA needs columns: Protein, Gene, Site, LogFC, P.Value
+  ksea_input <- data.frame(
+    Protein = as.character(pdea2$tt$Accession),
+    FullSymbol = as.character(pdea2$tt$Symbol),
+    LogFC   = as.numeric(pdea2$tt[[logfc_col]]),
+    P.Value = as.numeric(pdea2$tt[[p_col]]),
+    stringsAsFactors = FALSE
+  )
+  
+  # Clean up any row names that might mess up string splits
+  rownames(ksea_input) <- NULL
+  
+  # --- Step B: Split 'AAAS_S495' into 'AAAS' (Gene) and 'S495' (Site) ---
+  # We search for the underscore character "_" to split the text
+  split_symbols <- strsplit(ksea_input$FullSymbol, "_")
+  
+  # Extract the Gene Symbol (first part before the underscore)
+  ksea_input$Gene <- sapply(split_symbols, function(x) x[1])
+  
+  # Extract the Phospho-site (second part after the underscore)
+  ksea_input$Site <- sapply(split_symbols, function(x) x[2])
+  
+  # --- Step C: Final Column Cleanup for KSEAapp ---
+  # Drop the temporary FullSymbol column and keep only the required layout
+  ksea_input <- ksea_input[, c("Protein", "Gene", "Site", "LogFC", "P.Value")]
+  
+  # Drop any rows that have missing values in critical columns
+  ksea_input <- ksea_input[complete.cases(ksea_input[, c("Gene", "Site", "LogFC")]), ]
+  
+  # --- Step D: Execute KSEA Analysis ---
+  # This automatically matches your data against the default PhosphoSitePlus database
+  ksea_results <- KSEA.Complete(
+    KSData = KSEA.Scores,          # Uses the built-in database from the package
+    PX = ksea_input,               # Your formatted dataset
+    NetworKIN = FALSE,             # Set TRUE if you have NetworKIN predictions loaded
+    NetworKIN_N_cutoff = 2,        
+    m.cutoff = 2,                  # Minimum number of substrates required to score a kinase
+    p.cutoff = 0.05                # Significance threshold for output plotting
+  )
+  
+  # --- Step E: Save the Results to Global Workspace ---
+  # Create custom output variable names
+  output_var_name <- paste0("ksea.results.", comp)
+  
+  # Assign the final output list to your global workspace
+  assign(output_var_name, ksea_results, envir = .GlobalEnv)
+  
+  # Print progress update
+  cat(paste0("Successfully finished KSEA for: ", comp, 
+             " | Created variable: ", output_var_name, "\n"))
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
