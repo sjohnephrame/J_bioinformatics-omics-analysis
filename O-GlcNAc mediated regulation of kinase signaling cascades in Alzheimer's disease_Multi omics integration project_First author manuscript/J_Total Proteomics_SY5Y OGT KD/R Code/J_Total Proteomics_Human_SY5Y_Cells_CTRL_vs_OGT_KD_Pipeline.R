@@ -730,13 +730,13 @@ all.equal(Normalize, Normalize2)
 head(Normalize2)
 head(Normalize)
 
-dim(Normalize2) #[1] 9199   18  # without NAs, log, median norm
+dim(Normalize2) #[1] 9199   19  # without NAs, log, median norm
 dim(Normalize) #[1] 9199   18  # without NAs, log, median norm
 
 
 #9199  19 - use this for normalizing phosphoproteomiccs
 library(writexl)
-#write_xlsx(Normalize2, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\Normalize2v4.xlsx")
+###write_xlsx(Normalize2, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\Normalize2v4.xlsx")
 #write_xlsx(Normalize2, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\Normalize2v4_copy.xlsx")
 #write_xlsx(Normalize, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\Normalize2v3_copy.xlsx")
 ##########################################################################################
