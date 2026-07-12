@@ -811,7 +811,10 @@ pdat15check %>%
   dplyr::select(SiteID, where(is.numeric))
 dim(pdat15check) #[1] 24914    28
 
+#------------------------------------------------------#
 #need to remove these all 0 rows before proceeding
+#------------------------------------------------------#
+
 pdat15_filtered <- pdat15 %>%
   filter(if_any(where(is.numeric), ~ .x > 0))
 #Filter=keep rows where any numeric column has a value > 0 (atleast 1 value)
@@ -937,7 +940,7 @@ table(duplicated(pdat15_filtered_check$SiteID))
 
 #FALSE  TRUE 
 #12298  4450
-12298+4450 #[1] 16748
+#12298+4450 #[1] 16748
 
 #FALSE  TRUE 
 #12289  4459 - after filtering ambiguous sites
@@ -1036,9 +1039,9 @@ colSums(pdat15_filtered_check[, target_cols] < 1e-5, na.rm = TRUE)
 
 #Therefore, Imputation not needed
 
-#=================================================================
-# Summarize duplicates by Median intensity per site (most common)
-#=================================================================
+#====================================================================================================================================#
+# Summarize duplicates by Adding (more common)/Median intensity per site (only if technical replicates) For phosphoproteomis
+#====================================================================================================================================#
 
 library(dplyr)
 
@@ -1074,7 +1077,7 @@ dim(pdat16.1) #[1] 12298    28 - No missing values and w/o duplicates SiteID
 table(duplicated(pdat15_filtered_check$SiteID))
 #FALSE  TRUE 
 #12298  4450 
-12298+4450 #[1] 16748
+#12298+4450 #[1] 16748
 
 #FALSE  TRUE 
 #12289  4459 
@@ -1085,9 +1088,9 @@ pdat15_filtered_check %>%
 dim(pdat15_filtered_check) #[1] 16748    28
 
 head(pdat8)
-pdat8 %>% 
-  dplyr::filter(Accessions == "O43719") %>% 
-  View()
+#pdat8 %>% 
+ # dplyr::filter(Accessions == "O43719") %>% 
+ # View()
 
 pdat8 %>% 
   dplyr::filter(Accessions == "O43719") %>% 
@@ -1112,7 +1115,7 @@ pdat16.2 <- pdat15_filtered_check %>%
   group_by(SiteID) %>%
   summarize(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) 
 pdat16.2<-as.data.frame(pdat16.2)
-dim(pdat16.2) #[1] 12298    19 #After Summing duplicates 
+dim(pdat16.2) #[1] 12298    19 #After Summing duplicates because different charge state of peptides - Check with Dr Chalise
 head(pdat16.2)
 
 pdat16.3 <- pdat15_filtered_check %>% 
@@ -1121,7 +1124,6 @@ pdat16.3 <- pdat15_filtered_check %>%
 pdat16.3<-as.data.frame(pdat16.3)
 dim(pdat16.3) #[1] 12298    19 #After Summarizing duplicates by Median intensity per site 
 head(pdat16.3)
-
 
 #========================#
 #Duplicate Sites Check
@@ -1148,9 +1150,8 @@ dplyr::select(SiteID, where(is.numeric)) #summarizing all duplicates identities 
 
 # Export to Excel
 #write_xlsx(pdat15_filtered_check, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat15_filtered_check.xlsx")
-#write_xlsx(pdat16.1, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat16.1.xlsx")
 #write_xlsx(pdat16.2, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat16.2_07062026_updated.xlsx")
-#write_xlsx(pdat16.5, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\pdat16.5.xlsx")
+#After summing duplicate Site ID
 
 head(pdat16.2) #The summed duplicates
 dim(pdat16.2) #[1] 12289    19 After summarizing all duplicates identities by median intensities; removed NA and all 0 columns
@@ -1237,7 +1238,7 @@ ggplot(attrition_data, aes(x = Step, y = Count, fill = Step)) +
 dim(pdat13) #[1] 32559    28 #has all rows after filtering only for High and medium FDR
 dim(pdat15) #[1] 24914    28 - has only rows where SiteID is not NA but have duplicate SiteID
 dim(pdat15_filtered_check) #[1] 16748    28 - After removing all zero rows to median summarize intensities 
-dim(pdat16.2) #[1] 12289   19  - No missing values and w/o duplicates SiteID (median summarized) - after removing all 0 rows
+dim(pdat16.2) #[1] 12289   19  - No missing values and w/o duplicates SiteID (addition summarized) - after removing all 0 rows
 
 #-------------------------------------------------------------------------------------------------
 #log2 transform 
@@ -1256,7 +1257,7 @@ dim(pdat16.2) #[1] 12289   19  - No missing values and w/o duplicates SiteID (me
 #We need data clean like dat_comp1 to be able to do the analysis and plots
 #other cols except site id already removed
 
-dim(pdat16.2) #12289    19 #other cols except site id already removed; No missing values and w/o duplicates SiteID (median summarized)
+dim(pdat16.2) #12289    19 #other cols except site id already removed; No missing values and w/o duplicates SiteID (addition summarized)
 
 head(pdat16.2)
 colnames(pdat16.2)
@@ -1269,7 +1270,7 @@ rownames(pdat20.2) <- pdat20.2$SiteID #convert column value to row names
 head(pdat20.2)
 pdat21.2<-pdat20.2[, -c(1)] # Removed site id col as site ID converted to row name
 head(pdat21.2)
-dim(pdat21.2) #[1] 12298    18 #No missing values and w/o duplicates SiteID (median summarized)
+dim(pdat21.2) #[1] 12298    18 #No missing values and w/o duplicates SiteID (addition summarized)
 
 #check
 #head(dat_comp1)
@@ -1282,13 +1283,13 @@ dim(pdat21.2) #[1] 12298    18 #No missing values and w/o duplicates SiteID (med
 #==========================================#
 
 head(pdat21.2)
-dim(pdat21.2) #[1] 12298    18 #No missing values and w/o duplicates SiteID (median summarized)
+dim(pdat21.2) #[1] 12298    18 #No missing values and w/o duplicates SiteID (addition summarized)
 pdat22.2<-pdat21.2
 head(pdat22.2)
-dim(pdat22.2) #[1] 12298    18 #No missing values and w/o duplicates SiteID (median summarized); is a dataframe; Not matrix and not log transformed; need for pca
+dim(pdat22.2) #[1] 12298    18 #No missing values and w/o duplicates SiteID (addition summarized); is a dataframe; Not matrix and not log transformed; need for pca
 pdat22.2_mat = as.matrix(log2(pdat22.2+1)) # without NAs; matrix and log transformed
 head(pdat22.2_mat) # without NAs; matrix and log transformed
-dim(pdat22.2_mat) #[1] 12298    18 # without NAs; matrix and log transformed
+dim(pdat22.2_mat) #[1] 12289    18 # without NAs; matrix and log transformed
 
 #===============================================================================
 #If other cols except site id not already removed:
@@ -1784,18 +1785,15 @@ type(Normalize5)
 
 #So can use Normalize 5 (fed in excel sheet) instead of normalize (having to process entire total proteome every run)
 
-head(Normalize)
-dim(Normalize)
-totalprot<-as.data.frame(Normalize)
-head(totalprot)
-dim(totalprot)
+#head(Normalize)
+#dim(Normalize)
+#totalprot<-as.data.frame(Normalize)
+#head(totalprot)
+#dim(totalprot)
 
 head(Normalize5)
 dim(Normalize5)
 totalprot<-as.data.frame(Normalize5)
-head(totalprot)
-dim(totalprot)
-
 head(totalprot) #median normailzed and filtered values - use this for mds plot
 dim(totalprot) #[1] 9199   18 #removed NA, without Symbol, median norm, log 2
 type(totalprot)
@@ -1853,6 +1851,7 @@ dim(pprot_filtered)
 #[1] 9353   20
 9353+2936
 12289-9353
+#2936
 
 # 5. Performing the subtraction (because log transformed values)
 # We use a loop or a vectorized approach to subtract the total protein row from the phospho row
@@ -2331,13 +2330,13 @@ nrow(org_hs_clean)+nrow(uniprot_ws_clean)+length(ids_to_fix)
 
 table(is.na(pmapping4$UniprotAcc))
 #FALSE 
-#12298 
+#12289 
 head(pmapping4)
 table(is.na(pmapping4$hgnc_symbol))
 #FALSE  TRUE 
 #11568   747
 #11568   734
-
+#11555   734
 #needs_mapping2 <- is.na(pmapping4$hgnc_symbol)
 #head(needs_mapping2)
 
@@ -2450,7 +2449,7 @@ head(pmapping11)
 
 table(duplicated(pmapping11$SiteID))
 #FALSE   
-#12298    
+#12289    
 
 table(duplicated(pmapping11$Symbol_Site))
 #FALSE  TRUE 
@@ -2596,7 +2595,7 @@ head(pmappingde) #Has only 2 columns for DEA
 dim(pmappingde) # 12033 x 2
 
 head(pdat.de) #Median normalized matrix for DEA
-dim(pdat.de)
+dim(pdat.de)  #12033    18
 dim(pmappingde) # 12033 x 2
 
 #---------------------------------------------------------------------------------------------#
@@ -2915,6 +2914,9 @@ head(pdea$tt)
 nrow(ptmpa) #[1] 12029 agrregated duplicates based on median
 nrow(pdea$tt) #[1] 12033
 
+#Check ptmpa symbol and accession
+
+head(ptmpa)
 pmappingde %>% 
   dplyr::filter(Symbol  == "AAAS_S495")
 pmappingde %>% 
@@ -2935,6 +2937,12 @@ nrow(pdea$tt) #[1] 12033
 
 
 #head(tmp$Accession)
+pdea$ttold<-pdea$tt
+head(pdea$ttold)
+nrow(pdea$ttold)
+head(pdea$tt)
+nrow(pdea$tt)
+
 pdea$tt = ptmpa #Replacing with aggregated data (aggregated duplicates based on median)
 #de$tt = tmp
 head(pdea$tt)
@@ -2980,7 +2988,7 @@ head(logFCPprot)
 type(logFCPprot)
 library("writexl") 
 #install.packages("writexl")
-write_xlsx(logFCPprot,"C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\logFCPhospoprot_07062026_updated.xlsx")
+#write_xlsx(logFCPprot,"C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\logFCPhospoprot_07062026_updated.xlsx")
 dim(logFCPprot) #[1] 12029    24
 
 #============================================================================================================================================================================================#
@@ -3086,6 +3094,7 @@ nrow(pdat.de1) #12033 #Filterd missing symbols after mapping
 #Final Code
 #==================================================#
 colnames(pdea$tt) #logFC and pvalues
+nrow(pdea$tt) #12029
 
 #==================#
 #GFPTEN.GFPCTRL
@@ -5060,22 +5069,81 @@ dim(rem.sort.updown.ROGTTEN.GFPTEN)
 #J_KSEA
 #=======#
 
-#In progress...
+# ---------------------------------------------------------------------------------------#
+# For Loop: Run KSEA (Kinase-Substrate Enrichment Analysis) for All 7 Comparisons
+# ---------------------------------------------------------------------------------------#
+# Install KSEAapp if you haven't already:
+install.packages("KSEAapp")
+library(KSEAapp)
 
+# 1. Use your established list of 7 treatment comparison names
+comparisons <- c(
+  "GFPTEN.GFPCTRL", 
+  "OGTTEN.OGTCTRL", 
+  "ROGTTEN.ROGTCTRL", 
+  "OGTCTRL.GFPCTRL", 
+  "OGTTEN.GFPTEN", 
+  "ROGTCTRL.GFPCTRL", 
+  "ROGTTEN.GFPTEN"
+)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# 2. Run the loop to process KSEA
+for (comp in comparisons) {
+  
+  # Identify column names in your original pdea2$tt data frame
+  logfc_col <- comp
+  p_col     <- paste0("P.Value.", comp) # KSEA uses raw P.Value, not adjusted
+  
+  # --- Step A: Reconstruct a clean dataset formatted exactly for KSEAapp ---
+  # KSEA needs columns: Protein, Gene, Site, LogFC, P.Value
+  ksea_input <- data.frame(
+    Protein = as.character(pdea2$tt$Accession),
+    FullSymbol = as.character(pdea2$tt$Symbol),
+    LogFC   = as.numeric(pdea2$tt[[logfc_col]]),
+    P.Value = as.numeric(pdea2$tt[[p_col]]),
+    stringsAsFactors = FALSE
+  )
+  
+  # Clean up any row names that might mess up string splits
+  rownames(ksea_input) <- NULL
+  
+  # --- Step B: Split 'AAAS_S495' into 'AAAS' (Gene) and 'S495' (Site) ---
+  # We search for the underscore character "_" to split the text
+  split_symbols <- strsplit(ksea_input$FullSymbol, "_")
+  
+  # Extract the Gene Symbol (first part before the underscore)
+  ksea_input$Gene <- sapply(split_symbols, function(x) x[1])
+  
+  # Extract the Phospho-site (second part after the underscore)
+  ksea_input$Site <- sapply(split_symbols, function(x) x[2])
+  
+  # --- Step C: Final Column Cleanup for KSEAapp ---
+  # Drop the temporary FullSymbol column and keep only the required layout
+  ksea_input <- ksea_input[, c("Protein", "Gene", "Site", "LogFC", "P.Value")]
+  
+  # Drop any rows that have missing values in critical columns
+  ksea_input <- ksea_input[complete.cases(ksea_input[, c("Gene", "Site", "LogFC")]), ]
+  
+  # --- Step D: Execute KSEA Analysis ---
+  # This automatically matches your data against the default PhosphoSitePlus database
+  ksea_results <- KSEA.Complete(
+    KSData = KSEA.Scores,          # Uses the built-in database from the package
+    PX = ksea_input,               # Your formatted dataset
+    NetworKIN = FALSE,             # Set TRUE if you have NetworKIN predictions loaded
+    NetworKIN_N_cutoff = 2,        
+    m.cutoff = 2,                  # Minimum number of substrates required to score a kinase
+    p.cutoff = 0.05                # Significance threshold for output plotting
+  )
+  
+  # --- Step E: Save the Results to Global Workspace ---
+  # Create custom output variable names
+  output_var_name <- paste0("ksea.results.", comp)
+  
+  # Assign the final output list to your global workspace
+  assign(output_var_name, ksea_results, envir = .GlobalEnv)
+  
+  # Print progress update
+  cat(paste0("Successfully finished KSEA for: ", comp, 
+             " | Created variable: ", output_var_name, "\n"))
+}
 
