@@ -2999,7 +2999,7 @@ dim(logFCPprot) #[1] 12029    24
 
 library(ggplot2)
 library(scales)
-# Create the data frame with your numbers
+# Creating the data frame with the numbers
 attrition_data <- data.frame(
   Step = factor(c("1. Raw Peptides", "2. Missing Value Filter_Accession", "3. Summation of Duplicate Accessions", "4.Filtering missing Symbol", "5. Median aggregation_duplicate symbols"),
                 levels = c("1. Raw Peptides", "2. Missing Value Filter_Accession", "3. Summation of Duplicate Accessions", "4.Filtering missing Symbol", "5. Median aggregation_duplicate symbols")),
@@ -3905,7 +3905,7 @@ head(sortupdownROGTTENROGTCTRL)
 
 #New name:
 
-# 1. List your 7 specific treatment comparison names
+# 1. Listing 7 specific treatment comparison names
 comparisons <- c(
   "GFPTEN.GFPCTRL", 
   "OGTTEN.OGTCTRL", 
@@ -3916,7 +3916,7 @@ comparisons <- c(
   "ROGTTEN.GFPTEN"
 )
 
-# 2. Run the loop to generate the 14 data frames
+# 2. Running the loop to generate the 14 data frames
 for (comp in comparisons) {
   
   # Remove periods to match your exact requested variable style (e.g., OGTTENGFPTEN)
@@ -4161,7 +4161,7 @@ dim(logFCgreat2) #[1] 2315; 2284    2
 # 3rd For Loop: Split filtered data into logFC > 0.58 and logFC < -0.58
 #---------------------------------------------------------------------------------------#
 
-# 1. Use your established list of 7 treatment comparison names
+# 1. List of 7 treatment comparison names
 comparisons <- c(
   "GFPTEN.GFPCTRL", 
   "OGTTEN.OGTCTRL", 
@@ -4172,7 +4172,7 @@ comparisons <- c(
   "ROGTTEN.GFPTEN"
 )
 
-# 2. Run the loop to generate the 14 logFC-filtered data frames
+# 2. Running the loop to generate the 14 logFC-filtered data frames
 for (comp in comparisons) {
   
   # Construct the input variable name from your previous loop
@@ -4307,7 +4307,7 @@ head(prot.list2)
 # 4th For Loop: Create Named Numeric Rank Vectors for GSEA 
 #---------------------------------------------------------------------------------------#
 
-# 1. Use your established list of 7 treatment comparison names
+# 1.  7 treatment comparison names
 comparisons <- c(
   "GFPTEN.GFPCTRL", 
   "OGTTEN.OGTCTRL", 
@@ -4318,7 +4318,7 @@ comparisons <- c(
   "ROGTTEN.GFPTEN"
 )
 
-# 2. Run the loop to generate the 7 GSEA rank vectors
+# 2. Running the loop to generate the 7 GSEA rank vectors
 for (comp in comparisons) {
   
   # Construct the input variable name from your first sorting loop
@@ -4435,7 +4435,7 @@ barplot(sort(prot.list.sort.updown.ROGTTEN.GFPTEN, decreasing = T),axisnames=FAL
 head(prot.list)
 head(sortupdownROGTTENGFPTEN)
 
-# 1. Filter for adjusted p-value < 0.05
+# 1. Filtering for adjusted p-value < 0.05
 sig_only <- sortupdownROGTTENGFPTEN[sortupdownROGTTENGFPTEN$adj.P.Val.ROGTTEN.GFPTEN < 0.045, ]
 # Sort sig_only so the highest LogFC values are at the top
 
@@ -4690,7 +4690,7 @@ dim(rem.sort.updown.ROGTTEN.ROGTCTRL)
 # For Loop: Generate Data Files and Print Detailed Verification (Head & Dim)
 #---------------------------------------------------------------------------------------#
 
-# 1. Use your established list of 7 treatment comparison names
+# 1.  7 treatment comparison names
 comparisons <- c(
   "GFPTEN.GFPCTRL", 
   "OGTTEN.OGTCTRL", 
@@ -4701,7 +4701,7 @@ comparisons <- c(
   "ROGTTEN.GFPTEN"
 )
 
-# 2. Run the loop to generate the heatmap, subset, and full ordered files
+# 2. Running the loop to generate the heatmap, subset, and full ordered files
 for (comp in comparisons) {
   
   # Construct the input variable name from your p-value filtering loop
@@ -5063,6 +5063,7 @@ dim(rem.sort.updown.ROGTTEN.GFPTEN)
 
 #======================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================#
 
+
 #==========================#
 #J_Downstream Analysis
 #==========================#
@@ -5070,14 +5071,14 @@ dim(rem.sort.updown.ROGTTEN.GFPTEN)
 #=======#
 
 # ---------------------------------------------------------------------------------------#
-# For Loop: Run KSEA (Kinase-Substrate Enrichment Analysis) for All 7 Comparisons
+# For Loop: KSEA (Kinase-Substrate Enrichment Analysis) for All 7 Comparisons
 # ---------------------------------------------------------------------------------------#
-# Install KSEAapp if you haven't already:
+# Install KSEAapp
 #install.packages("KSEAapp")
 library(KSEAapp)
 #KSEA.download_Db()
 
-#KSEA is like GSEA so use the whole list of 12029 phosphosites
+#KSEA is like GSEA so must use the whole list of 12029 phosphosites
 
 
 head(updown.GFPTEN.GFPCTRL)
@@ -5126,10 +5127,11 @@ dim(sort.updown.ROGTTEN.GFPTEN)
 head(updown.ROGTTEN.ROGTCTRL)
 dim(updown.ROGTTEN.ROGTCTRL)
 
-#But KSEA uses p value not adjusted p value so generate files with all
+#But KSEA uses p value not adjusted p value so generating files with p value
 
 head(pdea2$tt)
-# 1. List tt2# 1. List your 7 specific treatment comparison names
+
+# 1. Listing 7 specific treatment comparison names
 comparisons <- c(
   "GFPTEN.GFPCTRL", 
   "OGTTEN.OGTCTRL", 
@@ -5140,105 +5142,61 @@ comparisons <- c(
   "ROGTTEN.GFPTEN"
 )
 
-# 2. Run the loop to generate the 14 data frames
+# 2. Running the loop to generate the 14 (sorted vs unsorted) raw p-value data frames
 for (comp in comparisons) {
   
-  # Remove periods to match your exact requested variable style (e.g., OGTTENGFPTEN)
-  #clean_name <- gsub("\\.", "", comp)
-  
-  # Define column identifiers based on your data structure
-  logfc_col  <- comp
-  #adj_p_col  <- paste0("adj.P.Val.", comp)
-  p_col      <- paste0("P.Value.", comp)
-  
-  # Create the baseline unsorted data frame
-  raw_df <- data.frame(
-    logFC = pdea2$tt[[logfc_col]],
-    #adj.P.Val = pdea2$tt[[adj_p_col]],
-    P.Val = pdea2$tt[[p_col]],
-    row.names = (as.character(pdea2$tt$Symbol))
-  )
-  
-  # Set the column names to explicitly match your format style
-  colnames(raw_df) <- c(paste0("logFC.", comp), paste0("adj.P.Val.", comp))
-  
-  # Create the sorted data frame (most significant p-values at the top)
-  sorted_df <- raw_df[order(raw_df[[p_col]], decreasing = TRUE), ]
-  
-  # Define the 2 unique file/variable names for this treatment
-  unsorted_var_name <- paste0("pval_updown.", comp)
-  sorted_var_name   <- paste0("pval_sort.updown.", comp)
-  
-  # Send both data frames directly to your R environment workspace
-  assign(unsorted_var_name, raw_df, envir = .GlobalEnv)
-  assign(sorted_var_name, sorted_df, envir = .GlobalEnv)
-}
-
-head(pdea2$tt)
-
-# 1. List your 7 specific treatment comparison names
-comparisons <- c(
-  "GFPTEN.GFPCTRL", 
-  "OGTTEN.OGTCTRL", 
-  "ROGTTEN.ROGTCTRL", 
-  "OGTCTRL.GFPCTRL", 
-  "OGTTEN.GFPTEN", 
-  "ROGTCTRL.GFPCTRL", 
-  "ROGTTEN.GFPTEN"
-)
-
-# 2. Run the loop to generate the 14 raw p-value data frames
-for (comp in comparisons) {
-  
-  # Define column identifiers matching your raw pdea2$tt data layout
+  # Defining column identifiers matching raw pdea2$tt data layout
   logfc_col  <- comp
   p_col      <- paste0("P.Value.", comp)
   
-  # Create the baseline data frame with clean temporary names
+  # Creating the baseline data frame with clean temporary names
   raw_df <- data.frame(
     logFC = pdea2$tt[[logfc_col]],
     P.Val = pdea2$tt[[p_col]],
     row.names = as.character(pdea2$tt$Symbol)
   )
   
-  # FIX 1: Sort by the temporary column "P.Val" before renaming 
-  # This keeps your decreasing = TRUE logic intact and perfectly safe from naming bugs
+  # FIX 1: Sorting by the temporary column "P.Val" before renaming 
+  # This keeps decreasing = TRUE logic intact and safe from naming bugs
   sorted_df <- raw_df[order(raw_df$P.Val, decreasing = TRUE), , drop = FALSE]
   
-  # FIX 2: Explicitly label columns as raw P.Value instead of adj.P.Val
+  # FIX 2: Labeling columns as raw P.Value instead of adj.P.Val
   colnames(raw_df)    <- c(paste0("logFC.", comp), paste0("P.Value.", comp))
   colnames(sorted_df) <- c(paste0("logFC.", comp), paste0("P.Value.", comp))
   
-  # Define the unique variable names for your workspace environment
+  # Defining the unique variable names for workspace environment
   unsorted_var_name <- paste0("pval_updown.", comp)
   sorted_var_name   <- paste0("pval_sort.updown.", comp)
   
-  # Send both data frames directly to your R environment workspace
+  # Sending both data frames to R environment workspace
   assign(unsorted_var_name, raw_df, envir = .GlobalEnv)
   assign(sorted_var_name, sorted_df, envir = .GlobalEnv)
 }
 
-# --- Quick Verification Check ---
+#Verification Check
+
 print(dim(pval_sort.updown.ROGTTEN.GFPTEN))
 nrow(pdea2$tt)
 print(head(pval_sort.updown.ROGTTEN.GFPTEN))
 head(pdea2$tt)
 print(head(pval_updown.ROGTTEN.GFPTEN))
 
-#KSEA for sort.updown.ROGTTEN.GFPTEN
+#--------------------------------------------------------------------#
+#KSEA for sort.updown.ROGTTEN.GFPTEN _ Individual dataframe code
+#--------------------------------------------------------------------#
 
 library(dplyr)
 library(tidyr)
 library(KSEAapp)
 
-# 1. Isolate your raw data frame
+# 1. Isolating raw data frame
 raw_data_rogt <- pval_sort.updown.ROGTTEN.GFPTEN
 head(raw_data_rogt)
 head(pval_sort.updown.ROGTTEN.GFPTEN)
 dim(raw_data_rogt)
 dim(pval_sort.updown.ROGTTEN.GFPTEN)
 
-# 2. Extract composite names and logFC values into a working data frame
+# 2. Extracting names and logFC values into a working data frame
 prep_rogt <- data.frame(
   Composite = gsub(" ", "", rownames(raw_data_rogt)), # Remove any spaces
   Log2FC    = as.numeric(raw_data_rogt$logFC.ROGTTEN.GFPTEN),
@@ -5248,15 +5206,15 @@ prep_rogt <- data.frame(
 head(prep_rogt)
 dim(prep_rogt) #12029  3
 
-# 3. Clean, Split, and DUPLICATE multi-site entries instantly
+# 3. Cleaning, Splitting, and Duplicating multi-site entries 
 ksea_input_rogt <- prep_rogt %>%
-  # Split the column "Composite" at the underscore into "Protein" and "Residue.Position"
+  # To split the column "Composite" at the underscore into "Protein" and "Residue.Position"
   separate(Composite, into = c("Protein", "Residue.Position"), sep = "_") %>%
-  # This splits multi-sites by the slash and automatically duplicates the rows!
+  # This splits multi-sites by the slash and automatically duplicates the rows
   separate_rows(Residue.Position, sep = "/") %>%
-  # Keep only the columns KSEAapp needs
+  # To keep only the columns KSEAapp needs
   dplyr::select(Protein, Residue.Position, Log2FC,p) %>%
-  # Filter out any accidental missing values
+  # To filter out any accidental missing values
   filter(!is.na(Log2FC) & !is.na(Protein) & Residue.Position != "")
 
 head(ksea_input_rogt)
@@ -5268,7 +5226,7 @@ ksea_input_rogt$Peptide <- "N/A"                    # Placeholder required colum
 head(ksea_input_rogt)
 dim(ksea_input_rogt)
 
-# Rearrange columns into the exact order the package requires [1]
+# Rearranging columns into the exact order the package requires [1]
 ksea_input_rogt <- ksea_input_rogt[, c("Protein", "Gene", "Peptide", "Residue.Position", "Log2FC", "p")]
 names(ksea_input_rogt)[names(ksea_input_rogt) == "Residue.Position"] <- "Residue.Both"
 names(ksea_input_rogt)[names(ksea_input_rogt) == "Log2FC"] <- "FC"
@@ -5279,15 +5237,15 @@ dim(prep_rogt)
 head(ksea_input_rogt)
 dim(ksea_input_rogt)
 #[1] 14838     6 - expanded
-#Because we split the kinases to 2 rows by sights, they have same logFC
+#Because we split the kinases to 2 rows by sites, they have same logFC
 
-# --- Verification ---
+# Verification:
 cat("Original rows:", nrow(raw_data_rogt), "\n")
 cat("New expanded rows (including all shared modifications):", nrow(ksea_input_rogt), "\n\n")
 print(head(raw_data_rogt))
 print(head(ksea_input_rogt, 10))
 
-#KSEA TRial
+#KSEA Trial
 
 library(dplyr)
 library(tidyr)
@@ -5297,16 +5255,37 @@ library(tidyr)
 #remotes::install_github("casecpb/KSEAapp")
 library(KSEAapp)
 
-packageVersion("KSEAapp") #0.99
+packageVersion("KSEAapp") #0.99  #2.0
 
 ls("package:KSEAapp")
 
 #[1] "KSData"        "KSEA.Barplot"  "KSEA.Heatmap"  "KSEA.KS_table" "KSEA.Scores"  
 #[6] "KSEA.Scores.1" "KSEA.Scores.2" "KSEA.Scores.3" "PX"    
 
-args(KSEA.Complete)
+#No KSEA Complete in updated version
 
-KSEA.Complete(
+# 1. Kinase-Substrate Table
+rogt_ten_ksea_table <- KSEA.KS_table(
+  KSData = KSData,
+  PX = ksea_input_rogt,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(rogt_ten_ksea_table)
+
+# 2. Kinase Scores Data Frame
+rogt_ten_ksea_scores <- KSEA.Scores(
+  KSData = KSData,
+  PX = ksea_input_rogt,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(rogt_ten_ksea_scores)
+
+# 3. Barplot Visualization
+KSEA.Barplot(
   KSData = KSData,
   PX = ksea_input_rogt,
   NetworKIN = TRUE,
@@ -5314,241 +5293,813 @@ KSEA.Complete(
   m.cutoff = 5,
   p.cutoff = 0.05
 )
-
-#Take my phosphosite fold-change data (ksea_input_rogt), 
-#compare it against known and predicted kinase targets (KSData), 
-#include high-confidence NetworKIN predictions, 
-#m.cutoff = 5, only analyze kinases with at least 5 substrate sites, 
-#and report kinases with enrichment p-values below 0.05."
-
-rogt_ksea_results <- KSEA.Complete(
-  KSData = KSData,
-  PX = ksea_input_rogt,
-  NetworKIN = TRUE,
-  NetworKIN.cutoff = 5,
-  m.cutoff = 5,
-  p.cutoff = 0.05
+title(
+  main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: OGT KD 606 10 MIN vs. GFP 10 Min", 
+  line = 1,          
+  cex.main = 1.1     
 )
 
-#Crosscheck:
 
-class(rogt_ksea_results) #Null
-#NULL means that KSEA did not send the results back into R as an object.
-#It does not mean the analysis failed. In KSEAapp 0.99.0, the results are saved as
-#files (for example, "KSEA Kinase Scores.csv") instead of being stored in rogt_ksea_results.
+#---------------------------------#
+#For loop for all 7 comparisons
+#---------------------------------#
 
-#The analysis output is instead written to files:
-
-#KSEA Kinase Scores.csv
-#Kinase-Substrate Links.csv
-#KSEA Bar Plot.tiff
-
-names(rogt_ksea_results) #Null
-
-#There are no names (no columns, no components, no parts) stored inside rogt_ksea_results.
-#Because KSEA did not return an R object to store.
-
-#However, 
-
-getwd()
-#"Documents"
-
-list.files()
-
-list.files(pattern = "KSEA")
-
-#"Kinase-Substrate Links.csv"                            
-#[29] "KSEA Bar Plot.tiff"                                    
-#[30] "KSEA Kinase Scores.csv" 
-
-#Thus, the files are saved in documents folder
-
-dim(KSData) #19757    14
-head(KSData)
-
-#known and predicted kinase targets - (KSData), 
-
-sum(ksea_input_rogt$Gene %in% KSData$Gene) #Kinases
-
-sum(ksea_input_rogt$Gene %in% KSData$SUB_GENE) #Substrates
-#8478
-
-#Your phosphoproteomics dataset contains substrates, not kinases.
-#ksea_input_rogt$Gene = measured phosphoproteins (substrates)
-#KSData$Gene = known kinase genes
-
-#Your experiment measured proteins that were phosphorylated. 
-#These proteins are the targets of kinases. 
-#KSEA uses these phosphorylated targets to infer 
-#which upstream kinases are active or inactive.
-
-head(ksea_input_rogt)
-tail(ksea_input_rogt)
-dim(ksea_input_rogt) #14838  6 - This is our file with all phoisphoproteomics data
-
-summary(ksea_input_rogt$FC)
-summary(ksea_input_rogt$p)
-sum(ksea_input_rogt$p < 0.05)
-#7380
-#8363 with p values
-
-#Shows we have signifcant changes
-
-colnames(KSData) #Comparison table
-head(KSData)
-
-head(ksea_input_rogt) #Our input table
-
-matched_sites <- ksea_input_rogt %>%
-  filter(paste(Gene, Residue.Both) %in%
-           paste(KSData$SUB_GENE, KSData$SUB_MOD_RSD))
-
-head(matched_sites)
-length(unique(paste(matched_sites$Gene, matched_sites$Residue.Both)))
-#926
-#These phosphosites were detected in our experiment and are also present 
-#in the kinase-substrate database substrate section (sub gene and su modified residue).
+print(dim(pval_sort.updown.ROGTTEN.GFPTEN))
+nrow(pdea2$tt)
+print(head(pval_sort.updown.ROGTTEN.GFPTEN))
+head(pdea2$tt)
+print(head(pval_updown.ROGTTEN.GFPTEN))
 
 library(dplyr)
+library(tidyr)
 
-Enriched.kinases.ROGT.GFPTEN <-KSData %>%
-  filter(paste(SUB_GENE, SUB_MOD_RSD) %in%
-           paste(matched_sites$Gene, matched_sites$Residue.Both)) %>%
-  #This keeps only kinase-substrate pairs where the exact protein and phosphorylation site are present in our experiment.
-  count(GENE, name = "matched_substrates") %>% 
-  #count(GENE) would give:
-  #GENE  	n
-   #CDK2	3
-   #AKT1	2
-#We changed the name of n to matched substrates
-  
-  filter(matched_substrates >= 5) %>%
-  arrange(desc(matched_substrates))
+# 1. 7 specific treatment comparison names
+comparisons <- c(
+  "GFPTEN.GFPCTRL", 
+  "OGTTEN.OGTCTRL", 
+  "ROGTTEN.ROGTCTRL", 
+  "OGTCTRL.GFPCTRL", 
+  "OGTTEN.GFPTEN", 
+  "ROGTCTRL.GFPCTRL", 
+  "ROGTTEN.GFPTEN"
+)
 
-Enriched.kinases.ROGT.GFPTEN
-head(Enriched.kinases.ROGT.GFPTEN)
-dim(Enriched.kinases.ROGT.GFPTEN)
+# 2. Running the loop to generate the 7 KSEA input data frames
 
-#56 - 56 kinases have 5 or more substrates from our phosphoproteomics dataset
-
-library(writexl)
-#write_xlsx(Enriched.kinases.ROGT.GFPTEN, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\Enriched.kinases.ROGT.GFPTEN.xlsx")
-
-#GENE matched_substrates
-#1      CDK2                130
-#2      CDK1                128
-#3   CSNK2A1                 86
-#4     MAPK3                 84
-#5    PRKACA                 65
-#6     MAPK1                 62
-
-# Read KSEA kinase activity results
-ksea_scores <- read.csv("KSEA Kinase Scores.csv")
-
-# Look at the table
-head(ksea_scores)
-
-# Check column names
-colnames(ksea_scores)
-#View(ksea_scores)
-
-#Most activated kinases:
-  Top_20_Active_Kinases<-ksea_scores %>%
-  arrange(desc(z.score)) %>%
-  head(30)
-  Top_20_Active_Kinases
-#Most inhibited kinases:
-  Top_20_Inhibited_Kinases<-ksea_scores %>%
-  arrange(z.score) %>%
-  head(20)
-  Top_20_Inhibited_Kinases
+for (comp in comparisons) {
   
-  summary(ksea_scores$z.score)
+  # Pulling the sorted p-value data frame from workspace
+  source_var_name <- paste0("pval_sort.updown.", comp)
+  raw_data_comp <- get(source_var_name, envir = .GlobalEnv)
   
-  summary(ksea_scores$p.value)
+  # Matching the column configurations inside the dynamic data frame
+  logfc_col_name <- paste0("logFC.", comp)
+  p_val_col_name <- paste0("P.Value.", comp)
   
-  sum(ksea_scores$p.value < 0.05)
-  #15
-  
-  #Out of all kinases tested by KSEA, 15 kinases have statistically significant
-  #evidence of altered activity.
-  
-  #z.score = -3.31
-  
-  # strongest predicted kinase inhibition
-  
-  #Highest:
-    
-   # z.score = +1.76
-  
-  # strongest predicted kinase activation
-  
-  significant_kinases <- ksea_scores %>%
-    filter(p.value < 0.05) %>%
-    arrange(p.value)
-  
-  significant_kinases
-  
-  #Column	Simple meaning
-  #Kinase.Gene	The kinase being evaluated
-  #log2FC	Average phosphorylation change of that kinase's substrate sites
-#mS	Mean substrate signal used for the calculation
-#Enrichment	How strongly the kinase's substrates are shifted
- # m	Number of known substrate sites used for that kinase
-#  z.score	Predicted kinase activity change
-#  p.value	Significance of the kinase prediction
-
-  
-#Plot:
-
-  library(ggplot2)
-  
-  ggplot(
-    significant_kinases,
-    aes(
-      x = reorder(Kinase.Gene, z.score),
-      y = z.score,
-      fill = z.score > 0
-    )
-  ) +
-    geom_col() +
-    coord_flip() +
-    scale_fill_manual(
-      values = c(
-        "TRUE" = "#BB1C1C", #BB1C1C", "#648FFF"
-        "FALSE" = "#648FFF"
-      ),
-      labels = c("Inhibited", "Activated")
-    ) +
-    labs(
-      title = "Significant Kinase Activity Changes (KSEA)",
-      x = "Kinase",
-      y = "KSEA z-score"
-    ) +
-    theme_classic()
-  
-  
-
-  # 2. Draw the plot
-  KSEA.Barplot(
-    KSData           = KSData,
-    PX               = ksea_input_rogt,
-    NetworKIN        = TRUE,
-    NetworKIN.cutoff = 5,
-    m.cutoff         = 5,             
-    p.cutoff         = 0.05,
-    export           = FALSE
-    )
-  
-  # Immediately overlay the title on your active screen window
-  title(
-    main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: OGT KD 606 10 MIN vs. GFP 10 Min", 
-    line = 1,          
-    cex.main = 1.1     
+  # Extracting composite names, logFC, and p-values
+  prep_df <- data.frame(
+    Composite = gsub(" ", "", rownames(raw_data_comp)), 
+    Log2FC    = as.numeric(raw_data_comp[[logfc_col_name]]),
+    p         = as.numeric(raw_data_comp[[p_val_col_name]]),
+    stringsAsFactors = FALSE
   )
- 
-  #MAPK3=ERK1, MAPK1=ERK2 
+  
+  # Cleaning, Splitting, and Expanding multi-site rows
+  ksea_input_df <- prep_df %>%
+    separate(Composite, into = c("Protein", "Residue.Position"), sep = "_") %>%
+    separate_rows(Residue.Position, sep = "/") %>%
+    dplyr::select(Protein, Residue.Position, Log2FC, p) %>%
+    filter(!is.na(Log2FC) & !is.na(Protein) & Residue.Position != "")
+  
+  # Appending required KSEA structures and matching names
+  ksea_input_df$Gene    <- ksea_input_df$Protein  
+  ksea_input_df$Peptide <- "N/A"                    
+  
+  # Rearranging and renaming columns to meet the KSEAapp formatting rules
+  ksea_input_df <- ksea_input_df[, c("Protein", "Gene", "Peptide", "Residue.Position", "Log2FC", "p")]
+  names(ksea_input_df)[names(ksea_input_df) == "Residue.Position"] <- "Residue.Both"
+  names(ksea_input_df)[names(ksea_input_df) == "Log2FC"]           <- "FC"
+  
+  # Defining output variable name (e.g., ksea_input_GFPTEN.GFPCTRL)
+  output_var_name <- paste0("ksea_input_", tolower(gsub("\\.", "_", comp)))
+  
+  # Pushing the final expanded data frame back to global environment
+  assign(output_var_name, ksea_input_df, envir = .GlobalEnv)
+  
+  # Print a quick verification status message to the console
+  cat("Processed:", comp, "-> Created:", output_var_name, "| Rows:", nrow(ksea_input_df), "\n")
+}
 
-#---------------------------------------------------------------------#
-#For loops for KSEA and multi-omics integrastion in progress...
-#---------------------------------------------------------------------#
+print(head(raw_data_rogt))
+print(head(ksea_input_rogt, 10))
+
+head(ksea_input_gfpten_gfpctrl)
+dim(ksea_input_gfpten_gfpctrl)
+
+head(ksea_input_ogtten_ogtctrl) 
+dim(ksea_input_ogtten_ogtctrl) 
+
+head(ksea_input_rogtten_rogtctrl)  
+dim(ksea_input_rogtten_rogtctrl)  
+
+head(ksea_input_ogtctrl_gfpctrl) 
+dim(ksea_input_ogtctrl_gfpctrl) 
+
+head(ksea_input_ogtten_gfpten) 
+dim(ksea_input_ogtten_gfpten) 
+
+head(ksea_input_rogtctrl_gfpctrl) 
+dim(ksea_input_rogtctrl_gfpctrl) 
+
+head(ksea_input_rogtten_gfpten)  
+dim(ksea_input_rogtten_gfpten)  
+
+#==============#
+#KSEA Analysis
+#==============#
+
+library(dplyr)
+library(tidyr)
+#install.packages("KSEAapp") # New version doesnt have ksea complete
+#remove.packages("KSEAapp")
+#install.packages("remotes") #s a lightweight, specialized tool designed to download and install R packages from remote repositories beyond CRAN. 
+#remotes::install_github("casecpb/KSEAapp")
+library(KSEAapp)
+
+packageVersion("KSEAapp") #0.99 #2.0 - does not have KSEA Complete
+
+ls("package:KSEAapp")
+
+#[1] "KSData"        "KSEA.Barplot"  "KSEA.Heatmap"  "KSEA.KS_table" "KSEA.Scores"  
+#[6] "KSEA.Scores.1" "KSEA.Scores.2" "KSEA.Scores.3" "PX"    
+
+#No KSEA Complete in updated version
+
+#----------------------------#
+#ksea_input_gfpten_gfpctrl
+#----------------------------#  
+
+head(ksea_input_gfpten_gfpctrl)
+dim(ksea_input_gfpten_gfpctrl)
+
+# 1. Kinase-Substrate Table
+#rogt_ten_ksea_table <- KSEA.KS_table(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5
+#)
+
+#head(rogt_ten_ksea_table)
+
+
+# 1. Kinase-Substrate Table
+ksea_table_gfpten_gfpctrl <- KSEA.KS_table(
+  KSData = KSData,
+  PX = ksea_input_gfpten_gfpctrl,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(ksea_table_gfpten_gfpctrl)
+library(writexl)
+#write_xlsx(ksea_table_gfpten_gfpctrl, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\ksea_table_gfpten_gfpctrl.xlsx")
+
+# 2. Kinase Scores Data Frame
+#rogt_ten_ksea_scores <- KSEA.Scores(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5
+#)
+
+#head(rogt_ten_ksea_scores)
+
+# 2. Kinase Scores Data Frame
+ksea_scores_gfpten_gfpctrl <- KSEA.Scores(
+  KSData = KSData,
+  PX = ksea_input_gfpten_gfpctrl,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(ksea_scores_gfpten_gfpctrl)
+#write_xlsx(ksea_scores_gfpten_gfpctrl, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\ksea_scores_gfpten_gfpctrl.xlsx")
+
+
+# 3. Barplot Visualization
+#KSEA.Barplot(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5,
+#  m.cutoff = 5,
+#  p.cutoff = 0.05
+#)
+#title(
+#  main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: OGT KD 606 10 MIN vs. GFP 10 Min", 
+#  line = 1,          
+#  cex.main = 1.1     
+#)
+
+# 3. Barplot Visualization
+KSEA.Barplot(
+  KSData = KSData,
+  PX = ksea_input_gfpten_gfpctrl,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5,
+  m.cutoff = 5,
+  p.cutoff = 0.05
+)
+title(
+  main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: GFP 10 MIN. vs. GFP 0 Min.", 
+  line = 1,          
+  cex.main = 1.1     
+)
+
+#------------------------------#
+#ksea_input_ogtten_ogtctrl
+#------------------------------#
+
+head(ksea_input_ogtten_ogtctrl) 
+dim(ksea_input_ogtten_ogtctrl) 
+
+
+# 1. Kinase-Substrate Table
+#rogt_ten_ksea_table <- KSEA.KS_table(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5
+#)
+
+#head(rogt_ten_ksea_table)
+
+
+# 1. Kinase-Substrate Table
+ksea_table_ogtten_ogtctrl <- KSEA.KS_table(
+  KSData = KSData,
+  PX = ksea_input_ogtten_ogtctrl,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(ksea_table_ogtten_ogtctrl)
+#write_xlsx(ksea_table_ogtten_ogtctrl, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\ksea_table_ogtten_ogtctrl.xlsx")
+
+# 2. Kinase Scores Data Frame
+#rogt_ten_ksea_scores <- KSEA.Scores(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5
+#)
+
+#head(rogt_ten_ksea_scores)
+
+# 2. Kinase Scores Data Frame
+ksea_scores_ogtten_ogtctrl <- KSEA.Scores(
+  KSData = KSData,
+  PX = ksea_input_ogtten_ogtctrl,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(ksea_scores_ogtten_ogtctrl)
+#write_xlsx(ksea_scores_ogtten_ogtctrl, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\ksea_scores_ogtten_ogtctrl.xlsx")
+
+
+# 3. Barplot Visualization
+#KSEA.Barplot(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5,
+#  m.cutoff = 5,
+#  p.cutoff = 0.05
+#)
+#title(
+#  main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: OGT KD 606 10 MIN vs. GFP 10 Min", 
+#  line = 1,          
+#  cex.main = 1.1     
+#)
+
+# 3. Barplot Visualization
+KSEA.Barplot(
+  KSData = KSData,
+  PX = ksea_input_ogtten_ogtctrl,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5,
+  m.cutoff = 5,
+  p.cutoff = 0.05
+)
+title(
+  main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: OGT KD. 605 - 10 MIN. vs. OGT KD. 605 - 0 Min.", 
+  line = 1,          
+  cex.main = 1.1     
+)
+
+#---------------------------------#
+#ksea_input_rogtten_rogtctrl
+#---------------------------------#
+
+head(ksea_input_rogtten_rogtctrl)  
+dim(ksea_input_rogtten_rogtctrl)  
+
+# 1. Kinase-Substrate Table
+#rogt_ten_ksea_table <- KSEA.KS_table(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5
+#)
+
+#head(rogt_ten_ksea_table)
+
+
+# 1. Kinase-Substrate Table
+ksea_table_rogtten_rogtctrl <- KSEA.KS_table(
+  KSData = KSData,
+  PX = ksea_input_rogtten_rogtctrl,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(ksea_table_rogtten_rogtctrl)
+#write_xlsx(ksea_table_rogtten_rogtctrl, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\ksea_table_rogtten_rogtctrl.xlsx")
+
+# 2. Kinase Scores Data Frame
+#rogt_ten_ksea_scores <- KSEA.Scores(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5
+#)
+
+#head(rogt_ten_ksea_scores)
+
+# 2. Kinase Scores Data Frame
+ksea_scores_rogtten_rogtctrl <- KSEA.Scores(
+  KSData = KSData,
+  PX = ksea_input_rogtten_rogtctrl,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(ksea_scores_rogtten_rogtctrl)
+#write_xlsx(ksea_scores_rogtten_rogtctrl, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\ksea_scores_rogtten_rogtctrl.xlsx")
+
+
+# 3. Barplot Visualization
+#KSEA.Barplot(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5,
+#  m.cutoff = 5,
+#  p.cutoff = 0.05
+#)
+#title(
+#  main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: OGT KD 606 10 MIN vs. GFP 10 Min", 
+#  line = 1,          
+#  cex.main = 1.1     
+#)
+
+# 3. Barplot Visualization
+KSEA.Barplot(
+  KSData = KSData,
+  PX = ksea_input_rogtten_rogtctrl,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5,
+  m.cutoff = 5,
+  p.cutoff = 0.05
+)
+title(
+  main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: OGT KD. 606 - 10 MIN. vs. OGT KD. 606 - 0 Min.", 
+  line = 1,          
+  cex.main = 1.1     
+)
+
+#----------------------------------#
+#ksea_input_ogtctrl_gfpctrl
+#----------------------------------#
+
+head(ksea_input_ogtctrl_gfpctrl) 
+dim(ksea_input_ogtctrl_gfpctrl) 
+
+
+# 1. Kinase-Substrate Table
+#rogt_ten_ksea_table <- KSEA.KS_table(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5
+#)
+
+#head(rogt_ten_ksea_table)
+
+
+# 1. Kinase-Substrate Table
+ksea_table_ogtctrl_gfpctrl <- KSEA.KS_table(
+  KSData = KSData,
+  PX = ksea_input_ogtctrl_gfpctrl,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(ksea_table_ogtctrl_gfpctrl)
+#write_xlsx(ksea_table_ogtctrl_gfpctrl, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\ksea_table_ogtctrl_gfpctrl.xlsx")
+
+# 2. Kinase Scores Data Frame
+#rogt_ten_ksea_scores <- KSEA.Scores(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5
+#)
+
+#head(rogt_ten_ksea_scores)
+
+# 2. Kinase Scores Data Frame
+ksea_scores_ogtctrl_gfpctrl <- KSEA.Scores(
+  KSData = KSData,
+  PX = ksea_input_ogtctrl_gfpctrl,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(ksea_scores_ogtctrl_gfpctrl)
+#write_xlsx(ksea_scores_ogtctrl_gfpctrl, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\ksea_scores_ogtctrl_gfpctrl.xlsx")
+
+
+# 3. Barplot Visualization
+#KSEA.Barplot(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5,
+#  m.cutoff = 5,
+#  p.cutoff = 0.05
+#)
+#title(
+#  main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: OGT KD 606 10 MIN vs. GFP 10 Min", 
+#  line = 1,          
+#  cex.main = 1.1     
+#)
+
+# 3. Barplot Visualization
+KSEA.Barplot(
+  KSData = KSData,
+  PX = ksea_input_ogtctrl_gfpctrl,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5,
+  m.cutoff = 5,
+  p.cutoff = 0.05
+)
+title(
+  main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: OGT KD. 605 - 0 MIN. vs. GFP - 0 Min.", 
+  line = 1,          
+  cex.main = 1.1     
+)
+
+#--------------------------------#
+#ksea_input_ogtten_gfpten
+#--------------------------------#
+
+head(ksea_input_ogtten_gfpten) 
+dim(ksea_input_ogtten_gfpten) 
+
+
+# 1. Kinase-Substrate Table
+#rogt_ten_ksea_table <- KSEA.KS_table(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5
+#)
+
+#head(rogt_ten_ksea_table)
+
+
+# 1. Kinase-Substrate Table
+ksea_table_ogtten_gfpten <- KSEA.KS_table(
+  KSData = KSData,
+  PX = ksea_input_ogtten_gfpten,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(ksea_table_ogtten_gfpten)
+#write_xlsx(ksea_table_ogtten_gfpten, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\ksea_table_ogtten_gfpten.xlsx")
+
+# 2. Kinase Scores Data Frame
+#rogt_ten_ksea_scores <- KSEA.Scores(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5
+#)
+
+#head(rogt_ten_ksea_scores)
+
+# 2. Kinase Scores Data Frame
+ksea_scores_ogtten_gfpten <- KSEA.Scores(
+  KSData = KSData,
+  PX = ksea_input_ogtten_gfpten,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(ksea_scores_ogtten_gfpten)
+#write_xlsx(ksea_scores_ogtten_gfpten, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\ksea_scores_ogtten_gfpten.xlsx")
+
+
+# 3. Barplot Visualization
+#KSEA.Barplot(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5,
+#  m.cutoff = 5,
+#  p.cutoff = 0.05
+#)
+#title(
+#  main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: OGT KD 606 10 MIN vs. GFP 10 Min", 
+#  line = 1,          
+#  cex.main = 1.1     
+#)
+
+# 3. Barplot Visualization
+KSEA.Barplot(
+  KSData = KSData,
+  PX = ksea_input_ogtten_gfpten,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5,
+  m.cutoff = 5,
+  p.cutoff = 0.05
+)
+title(
+  main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: OGT KD. 605 - 10 MIN. vs. GFP - 10 Min.", 
+  line = 1,          
+  cex.main = 1.1     
+)
+
+#-------------------------------#
+#ksea_input_rogtctrl_gfpctrl
+#-------------------------------#
+
+head(ksea_input_rogtctrl_gfpctrl) 
+dim(ksea_input_rogtctrl_gfpctrl) 
+
+# 1. Kinase-Substrate Table
+#rogt_ten_ksea_table <- KSEA.KS_table(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5
+#)
+
+#head(rogt_ten_ksea_table)
+
+
+# 1. Kinase-Substrate Table
+ksea_table_rogtctrl_gfpctrl <- KSEA.KS_table(
+  KSData = KSData,
+  PX = ksea_input_rogtctrl_gfpctrl,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(ksea_table_rogtctrl_gfpctrl)
+#write_xlsx(ksea_table_rogtctrl_gfpctrl, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\ksea_table_rogtctrl_gfpctrl.xlsx")
+
+# 2. Kinase Scores Data Frame
+#rogt_ten_ksea_scores <- KSEA.Scores(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5
+#)
+
+#head(rogt_ten_ksea_scores)
+
+# 2. Kinase Scores Data Frame
+ksea_scores_rogtctrl_gfpctrl <- KSEA.Scores(
+  KSData = KSData,
+  PX = ksea_input_rogtctrl_gfpctrl,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(ksea_scores_rogtctrl_gfpctrl)
+#write_xlsx(ksea_scores_rogtctrl_gfpctrl, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\ksea_scores_rogtctrl_gfpctrl.xlsx")
+
+
+# 3. Barplot Visualization
+#KSEA.Barplot(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5,
+#  m.cutoff = 5,
+#  p.cutoff = 0.05
+#)
+#title(
+#  main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: OGT KD 606 10 MIN vs. GFP 10 Min", 
+#  line = 1,          
+#  cex.main = 1.1     
+#)
+
+# 3. Barplot Visualization
+KSEA.Barplot(
+  KSData = KSData,
+  PX = ksea_input_rogtctrl_gfpctrl,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5,
+  m.cutoff = 5,
+  p.cutoff = 0.05
+)
+title(
+  main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: OGT KD. 606 - 0 MIN. vs. GFP - 0 Min.", 
+  line = 1,          
+  cex.main = 1.1     
+)
+
+#--------------------------------#
+#ksea_input_rogtten_gfpten
+#--------------------------------#
+
+head(ksea_input_rogtten_gfpten)  
+dim(ksea_input_rogtten_gfpten)  
+
+
+# 1. Kinase-Substrate Table
+#rogt_ten_ksea_table <- KSEA.KS_table(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5
+#)
+
+#head(rogt_ten_ksea_table)
+
+
+# 1. Kinase-Substrate Table
+ksea_table_rogtten_gfpten <- KSEA.KS_table(
+  KSData = KSData,
+  PX = ksea_input_rogtten_gfpten,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(ksea_table_rogtten_gfpten)
+#write_xlsx(ksea_table_rogtten_gfpten, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\ksea_table_rogtten_gfpten.xlsx")
+
+# 2. Kinase Scores Data Frame
+#rogt_ten_ksea_scores <- KSEA.Scores(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5
+#)
+
+#head(rogt_ten_ksea_scores)
+
+# 2. Kinase Scores Data Frame
+ksea_scores_rogtten_gfpten <- KSEA.Scores(
+  KSData = KSData,
+  PX = ksea_input_rogtten_gfpten,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5
+)
+
+head(ksea_scores_rogtten_gfpten)
+#write_xlsx(ksea_scores_rogtten_gfpten, "C:\\Users\\sophi\\OneDrive\\Desktop\\J_DESKTOP 2025\\J_Dr. Slawson projects_ 2023\\J_ERK MS\\J_TOTAL PROTEOME_R\\J_PROTEOMICS R CODE\\ksea_scores_rogtten_gfpten.xlsx")
+
+
+# 3. Barplot Visualization
+#KSEA.Barplot(
+#  KSData = KSData,
+#  PX = ksea_input_rogt,
+#  NetworKIN = TRUE,
+#  NetworKIN.cutoff = 5,
+#  m.cutoff = 5,
+#  p.cutoff = 0.05
+#)
+#title(
+#  main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: OGT KD 606 10 MIN vs. GFP 10 Min", 
+#  line = 1,          
+#  cex.main = 1.1     
+#)
+
+# 3. Barplot Visualization
+KSEA.Barplot(
+  KSData = KSData,
+  PX = ksea_input_rogtten_gfpten,
+  NetworKIN = TRUE,
+  NetworKIN.cutoff = 5,
+  m.cutoff = 5,
+  p.cutoff = 0.05
+)
+title(
+  main = "Kinase-Substrate Enrichment Analysis\nKinase Activity Profile: OGT KD. 606 - 10 MIN. vs. GFP - 10 Min.", 
+  line = 1,          
+  cex.main = 1.1     
+)
+
+
+#==============================================================================#
+# KSEA Comparative Heatmap
+#==============================================================================#
+
+# 1. Compiling all 7 kinase score data frames into a list
+KSEA_score_datasets_list <- list(
+  ksea_scores_gfpten_gfpctrl,
+  ksea_scores_ogtten_ogtctrl,
+  ksea_scores_rogtten_rogtctrl,
+  ksea_scores_ogtctrl_gfpctrl,
+  ksea_scores_ogtten_gfpten,
+  ksea_scores_rogtctrl_gfpctrl,
+  ksea_scores_rogtten_gfpten
+)
+
+head(KSEA_score_datasets_list)
+
+# 2. Defining the matching labels
+
+#comparison_labels <- c(
+ # "GFP 10 Min. vs. GFP 0 Min.",
+#  "OGT KD 605 10 Min. vs. OGT KD 605 0 Min.",
+ # "OGT KD 606 10 Min. vs. OGT KD 606 0 Min.",
+#  "OGT KD 605 0 Min. vs. GFP 0 Min.",
+#  "OGT KD 605 10 Min. vs. GFP 10 Min.",
+#  "OGT KD 606 0 Min. vs. GFP 0 Min.",
+#  "OGT KD 606 10 Min. vs. GFP 10 Min."
+#)
+
+comparison_labels <- c(
+  "GFP 10m.\n vs.\nGFP 0m.",
+  "605 10m.\n vs.\n605 0m.",
+  "606 10m.\nvs.\n606 0m.",
+  "605 0m.\nvs.\nGFP 0m.",
+  "605 10m.\nvs.\nGFP 10m.",
+  "606 0m.\nvs.\nGFP 0m.",
+  "606 10m.\nvs.\nGFP 10m."
+)
+
+
+head(comparison_labels)
+
+# 3. Generating KSEA Heatmap
+
+# c(bottom, left, top, right)
+
+
+KSEA.Heatmap(
+  score.list = KSEA_score_datasets_list,   
+  sample.labels = comparison_labels, 
+  stats = "z.score",                 # Required: Must choose "z.score" or "p.value"
+  m.cutoff = 5,                      # Filters for kinases with >= 5 substrates
+  p.cutoff = 0.05,                   # Filters for significant enrichment
+  sample.cluster = FALSE             # Optional: TRUE to cluster the 7 treatment columns
+)
+title(
+  main = "Kinase-Substrate Enrichment Analysis (KSEA) Heatmap", 
+  line = 3.2,          
+  cex.main = 1.1     
+)
+
+
+
+# 1. Compiling 4 kinase score data frames (OGT KD vs GFP) into a list
+KSEA_score_datasets_list <- list(
+  ksea_scores_ogtctrl_gfpctrl,
+  ksea_scores_ogtten_gfpten,
+  ksea_scores_rogtctrl_gfpctrl,
+  ksea_scores_rogtten_gfpten
+)
+
+head(KSEA_score_datasets_list)
+
+# 2. Defining the matching labels
+
+#comparison_labels <- c(
+# "GFP 10 Min. vs. GFP 0 Min.",
+#  "OGT KD 605 10 Min. vs. OGT KD 605 0 Min.",
+# "OGT KD 606 10 Min. vs. OGT KD 606 0 Min.",
+#  "OGT KD 605 0 Min. vs. GFP 0 Min.",
+#  "OGT KD 605 10 Min. vs. GFP 10 Min.",
+#  "OGT KD 606 0 Min. vs. GFP 0 Min.",
+#  "OGT KD 606 10 Min. vs. GFP 10 Min."
+#)
+
+comparison_labels <- c(
+  "605 0m.\nvs.\nGFP 0m.",
+  "605 10m.\nvs.\nGFP 10m.",
+  "606 0m.\nvs.\nGFP 0m.",
+  "606 10m.\nvs.\nGFP 10m."
+)
+
+
+head(comparison_labels)
+
+# 3. Generating KSEA Heatmap
+
+# c(bottom, left, top, right)
+
+
+KSEA.Heatmap(
+  score.list = KSEA_score_datasets_list,   
+  sample.labels = comparison_labels, 
+  stats = "z.score",                 # Required: Must choose "z.score" or "p.value"
+  m.cutoff = 5,                      # Filters for kinases with >= 5 substrates
+  p.cutoff = 0.05,                   # Filters for significant enrichment
+  sample.cluster = FALSE             # Optional: TRUE to cluster the 4 treatment columns
+)
+title(
+  main = "Kinase-Substrate Enrichment Analysis (KSEA) Heatmap", 
+  line = 3.2,          
+  cex.main = 1.1     
+)
+
+
