@@ -87,3 +87,10 @@ Scripts include clear step-by-step comments to guide users through each workflow
 **Sophiya J Hanigan, PhD**  
 Bioinformatics Scientist | Multi-omics Data Analysis  
 GitHub: [https://github.com/sjohnephrame](https://github.com/sjohnephrame)
+
+## Repository Usage & Copyright
+
+💼 **For Recruiters & Hiring Managers:** You are fully welcome to clone, run, and test this code to evaluate my technical skills for open roles. 
+
+⚠️ **For Academic/Research Use:** © 2026 [Sophiya John Ephrame Hanigan]. All rights reserved. This repository contains original first-author manuscript data and code for an upcoming publication. No part of this project, data, or pipeline may be republished, modified, or used in other research papers without explicit written permission.
+
